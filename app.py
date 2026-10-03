@@ -39,10 +39,10 @@ st.html(
         border: 1px solid rgba(120, 120, 120, 0.22);
         background: linear-gradient(
             135deg,
-            rgba(28, 31, 38, 0.96),
-            rgba(45, 52, 65, 0.92)
+            rgba(28, 31, 38, 0.97),
+            rgba(45, 52, 65, 0.94)
         );
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.3rem;
     }
 
     .hero-title {
@@ -82,6 +82,7 @@ st.html(
         border: 1px solid rgba(120, 120, 120, 0.18);
         border-radius: 14px;
         padding: 1rem;
+        min-height: 115px;
     }
 
     div[data-testid="stMetricLabel"] {
@@ -115,6 +116,14 @@ os.environ["AI_CFO_THESIS_ROOT"] = THESIS_ROOT
 
 
 # ============================================================
+# DEFAULT DEMO CASE
+# ============================================================
+
+DEFAULT_CIK = "96699"
+DEFAULT_PERIOD = "2021-12-31"
+
+
+# ============================================================
 # LOAD RESEARCH DATA
 # ============================================================
 
@@ -145,6 +154,7 @@ def load_chapter3_panel():
         panel_path
     )
 
+    # Recreate Chapter 3 SIC encoding
     panel["sic"] = (
         panel["sic"]
         .astype(str)
@@ -212,6 +222,7 @@ model_features = list(
 st.html(
     """
     <div class="hero-card">
+
         <div class="hero-title">
             AI CFO
         </div>
@@ -224,6 +235,7 @@ st.html(
         <div class="pipeline-text">
             Predict → Recommend → Explain → Simulate → Decide
         </div>
+
     </div>
     """
 )
@@ -236,7 +248,7 @@ st.caption(
 
 
 # ============================================================
-# SIDEBAR — COMPANY SELECTION
+# SIDEBAR
 # ============================================================
 
 st.sidebar.markdown(
@@ -249,9 +261,14 @@ st.sidebar.caption(
 
 st.sidebar.divider()
 
-st.sidebar.header(
-    "Analysis Setup"
+st.sidebar.markdown(
+    "### Analysis Setup"
 )
+
+
+# ============================================================
+# COMPANY SELECTION
+# ============================================================
 
 company_options = (
     recommendation_df[
@@ -261,6 +278,9 @@ company_options = (
     .sort_values(
         "company_name"
     )
+    .reset_index(
+        drop=True
+    )
 )
 
 company_options["display_name"] = (
@@ -269,12 +289,35 @@ company_options["display_name"] = (
     + company_options["cik"]
 )
 
+company_display_list = (
+    company_options[
+        "display_name"
+    ]
+    .tolist()
+)
+
+default_company_index = 0
+
+default_company_matches = (
+    company_options.index[
+        company_options["cik"]
+        == DEFAULT_CIK
+    ]
+    .tolist()
+)
+
+if default_company_matches:
+
+    default_company_index = (
+        default_company_matches[0]
+    )
+
+
 selected_company_display = (
     st.sidebar.selectbox(
         "Select Company",
-        company_options[
-            "display_name"
-        ].tolist(),
+        company_display_list,
+        index=default_company_index,
     )
 )
 
@@ -323,10 +366,28 @@ period_labels = [
     for period in available_periods
 ]
 
+default_period_index = 0
+
+if DEFAULT_PERIOD in period_labels:
+
+    default_period_index = (
+        period_labels.index(
+            DEFAULT_PERIOD
+        )
+    )
+
+elif period_labels:
+
+    default_period_index = (
+        len(period_labels) - 1
+    )
+
+
 selected_period_string = (
     st.sidebar.selectbox(
         "Select Quarter",
         period_labels,
+        index=default_period_index,
     )
 )
 
@@ -350,28 +411,168 @@ run_analysis = (
 )
 
 st.sidebar.caption(
-    "Runs the complete Chapter 3–6 "
-    "decision intelligence pipeline."
+    "Runs the full predictive, recommendation, "
+    "explainability, and strategy-simulation pipeline."
 )
 
 
 # ============================================================
-# INTRO PANEL
+# RUNTIME STATUS
 # ============================================================
 
-if not run_analysis:
+st.sidebar.divider()
+
+st.sidebar.markdown(
+    "### System Status"
+)
+
+st.sidebar.success(
+    "Research pipeline: Ready"
+)
+
+if os.environ.get(
+    "NEBIUS_API_KEY"
+):
+
+    st.sidebar.success(
+        "Nemotron executive layer: Connected"
+    )
+
+else:
+
+    st.sidebar.info(
+        "Nemotron executive layer: Local fallback"
+    )
+
+    st.sidebar.caption(
+        "Nebius credentials have not been configured. "
+        "No live Nemotron claim is made."
+    )
+
+
+# ============================================================
+# ANALYSIS STATE
+# ============================================================
+
+analysis_key = (
+    f"{selected_cik}|"
+    f"{selected_period_string}"
+)
+
+stored_key = (
+    st.session_state.get(
+        "analysis_key"
+    )
+)
+
+stored_result = (
+    st.session_state.get(
+        "analysis_result"
+    )
+)
+
+
+# ============================================================
+# RUN ANALYSIS WHEN REQUESTED
+# ============================================================
+
+if run_analysis:
+
+    sample_match = panel_df[
+        (
+            panel_df["cik"]
+            .astype(str)
+            == selected_cik
+        )
+        & (
+            panel_df["period"]
+            == selected_period
+        )
+    ]
+
+    if sample_match.empty:
+
+        st.error(
+            "This company-quarter was not found "
+            "in the Chapter 3 modeling panel."
+        )
+
+        st.stop()
+
+
+    sample_row = (
+        sample_match.iloc[0]
+    )
+
+
+    company_data = {
+        feature: sample_row[
+            feature
+        ]
+        for feature in model_features
+    }
+
+    company_data["cik"] = (
+        selected_cik
+    )
+
+    company_data["period"] = (
+        selected_period.strftime(
+            "%Y-%m-%d"
+        )
+    )
+
+
+    with st.spinner(
+        "AI CFO is analyzing risk, recommendations, "
+        "explanations, and strategy scenarios..."
+    ):
+
+        result = run_cfo_analysis(
+            company_data
+        )
+
+
+    st.session_state[
+        "analysis_result"
+    ] = result
+
+    st.session_state[
+        "analysis_key"
+    ] = analysis_key
+
+
+elif (
+    stored_result is not None
+    and stored_key == analysis_key
+):
+
+    result = stored_result
+
+
+else:
+
+    result = None
+
+
+# ============================================================
+# LANDING STATE
+# ============================================================
+
+if result is None:
 
     st.info(
-        "Select a company and reporting quarter from the "
-        "sidebar, then run the AI CFO analysis."
+        "The primary demonstration case is preselected. "
+        "Click **Run AI CFO Analysis** to begin, or choose "
+        "another company and reporting quarter."
     )
 
     st.markdown(
         "### Decision Intelligence Pipeline"
     )
 
-    col1, col2, col3, col4 = st.columns(
-        4
+    col1, col2, col3, col4 = (
+        st.columns(4)
     )
 
     with col1:
@@ -381,7 +582,8 @@ if not run_analysis:
         )
 
         st.write(
-            "Estimate next-quarter financial distress risk."
+            "Estimate next-quarter "
+            "financial distress risk."
         )
 
     with col2:
@@ -391,7 +593,8 @@ if not run_analysis:
         )
 
         st.write(
-            "Generate governance-aware strategic actions."
+            "Generate governance-aware "
+            "strategic actions."
         )
 
     with col3:
@@ -401,7 +604,8 @@ if not run_analysis:
         )
 
         st.write(
-            "Identify the drivers behind the recommendation."
+            "Identify the model drivers "
+            "behind the recommendation."
         )
 
     with col4:
@@ -411,8 +615,10 @@ if not run_analysis:
         )
 
         st.write(
-            "Stress-test strategy across four modeled quarters."
+            "Stress-test strategy across "
+            "four modeled quarters."
         )
+
 
     st.divider()
 
@@ -422,80 +628,18 @@ if not run_analysis:
 
     st.write(
         "Traditional financial AI often stops after predicting "
-        "what may happen. AI CFO extends that workflow by connecting "
-        "risk prediction to strategic recommendations, explainability, "
-        "multi-quarter simulation, and executive decision support."
+        "what may happen. AI CFO extends the workflow by connecting "
+        "financial risk prediction to strategic recommendations, "
+        "explainability, multi-quarter simulation, and executive "
+        "decision support."
     )
 
     st.stop()
 
 
 # ============================================================
-# FIND COMPANY-QUARTER IN CHAPTER 3 PANEL
+# UNPACK RESULTS
 # ============================================================
-
-sample_match = panel_df[
-    (
-        panel_df["cik"]
-        .astype(str)
-        == selected_cik
-    )
-    & (
-        panel_df["period"]
-        == selected_period
-    )
-]
-
-if sample_match.empty:
-
-    st.error(
-        "This company-quarter was not found in the "
-        "Chapter 3 modeling panel."
-    )
-
-    st.stop()
-
-
-sample_row = (
-    sample_match.iloc[0]
-)
-
-
-# ============================================================
-# BUILD MODEL INPUT
-# ============================================================
-
-company_data = {
-    feature: sample_row[
-        feature
-    ]
-    for feature in model_features
-}
-
-company_data["cik"] = (
-    selected_cik
-)
-
-company_data["period"] = (
-    selected_period.strftime(
-        "%Y-%m-%d"
-    )
-)
-
-
-# ============================================================
-# RUN COMPLETE AI CFO PIPELINE
-# ============================================================
-
-with st.spinner(
-    "AI CFO is analyzing risk, recommendations, "
-    "explanations, and strategy scenarios..."
-):
-
-    result = run_cfo_analysis(
-        company_data
-    )
-
 
 forecast = result[
     "forecast"
@@ -523,7 +667,9 @@ executive_brief = result[
 # ============================================================
 
 st.html(
-    '<div class="section-kicker">Company Analysis</div>'
+    '<div class="section-kicker">'
+    'Company Analysis'
+    '</div>'
 )
 
 st.header(
@@ -531,13 +677,14 @@ st.header(
 )
 
 st.caption(
-    f"Reporting period: {selected_period_string} "
+    f"Reporting period: "
+    f"{selected_period_string} "
     f"• CIK {selected_cik}"
 )
 
 
 # ============================================================
-# EXECUTIVE SNAPSHOT
+# PREPARE EXECUTIVE SNAPSHOT
 # ============================================================
 
 distress = forecast.get(
@@ -610,6 +757,10 @@ else:
     )
 
 
+# ============================================================
+# EXECUTIVE SNAPSHOT
+# ============================================================
+
 st.markdown(
     "### Executive Snapshot"
 )
@@ -634,12 +785,14 @@ with snapshot_col1:
             "Unavailable",
         )
 
+
 with snapshot_col2:
 
     st.metric(
         "Strategic Regime",
         strategic_regime,
     )
+
 
 with snapshot_col3:
 
@@ -648,6 +801,7 @@ with snapshot_col3:
         top_action,
     )
 
+
 with snapshot_col4:
 
     st.metric(
@@ -655,15 +809,18 @@ with snapshot_col4:
         scenario_label,
     )
 
+
 st.divider()
 
 
 # ============================================================
-# CHAPTER 3 — RISK OUTLOOK
+# CHAPTER 3 — PREDICT
 # ============================================================
 
 st.html(
-    '<div class="section-kicker">Chapter 3 · Predict</div>'
+    '<div class="section-kicker">'
+    'Chapter 3 · Predict'
+    '</div>'
 )
 
 st.subheader(
@@ -691,6 +848,7 @@ with risk_col1:
             f"{distress_probability:.2%}",
         )
 
+
 with risk_col2:
 
     if distress_threshold is not None:
@@ -699,6 +857,7 @@ with risk_col2:
             "Classification Threshold",
             f"{distress_threshold:.0%}",
         )
+
 
 with risk_col3:
 
@@ -714,14 +873,24 @@ with risk_col3:
     )
 
 
+if predicted_distress == 1:
+
+    st.warning(
+        "The modeled distress probability exceeds "
+        "the classification threshold."
+    )
+
+
 # ============================================================
-# CHAPTER 4 — RECOMMENDATIONS
+# CHAPTER 4 — RECOMMEND
 # ============================================================
 
 st.divider()
 
 st.html(
-    '<div class="section-kicker">Chapter 4 · Recommend</div>'
+    '<div class="section-kicker">'
+    'Chapter 4 · Recommend'
+    '</div>'
 )
 
 st.subheader(
@@ -745,12 +914,14 @@ if recommendations.get(
             ],
         )
 
+
     with regime_col2:
 
         st.metric(
             "Financial Health Score",
             f"{recommendations['financial_health_score']:.3f}",
         )
+
 
     recommendation_table = (
         pd.DataFrame(
@@ -775,11 +946,27 @@ if recommendations.get(
         )
     )
 
+    if (
+        "Decision Score"
+        in recommendation_table.columns
+    ):
+
+        recommendation_table[
+            "Decision Score"
+        ] = (
+            recommendation_table[
+                "Decision Score"
+            ]
+            .round(3)
+        )
+
+
     st.dataframe(
         recommendation_table,
         hide_index=True,
         use_container_width=True,
     )
+
 
 else:
 
@@ -789,13 +976,15 @@ else:
 
 
 # ============================================================
-# CHAPTER 5 — EXPLAINABILITY
+# CHAPTER 5 — EXPLAIN
 # ============================================================
 
 st.divider()
 
 st.html(
-    '<div class="section-kicker">Chapter 5 · Explain</div>'
+    '<div class="section-kicker">'
+    'Chapter 5 · Explain'
+    '</div>'
 )
 
 st.subheader(
@@ -812,9 +1001,10 @@ if explanation.get(
     )
 
     st.markdown(
-        f"**Chapter 5 surrogate probability:** "
+        f"**Surrogate recommendation probability:** "
         f"{explanation['surrogate_predicted_probability']:.2%}"
     )
+
 
     driver_table = pd.DataFrame(
         explanation[
@@ -848,11 +1038,38 @@ if explanation.get(
         )
     )
 
+
+    driver_table[
+        "Driver"
+    ] = (
+        driver_table[
+            "Driver"
+        ]
+        .astype(str)
+        .str.replace(
+            "_",
+            " ",
+            regex=False,
+        )
+    )
+
+
+    driver_table[
+        "SHAP Contribution"
+    ] = (
+        driver_table[
+            "SHAP Contribution"
+        ]
+        .round(4)
+    )
+
+
     st.dataframe(
         driver_table,
         hide_index=True,
         use_container_width=True,
     )
+
 
     strongest_driver = (
         explanation[
@@ -860,17 +1077,30 @@ if explanation.get(
         ][0]
     )
 
+    strongest_driver_name = (
+        strongest_driver[
+            "feature"
+        ]
+        .replace(
+            "_",
+            " ",
+        )
+    )
+
+
     st.info(
         "Strongest explanatory driver: "
-        f"**{strongest_driver['feature']}** "
+        f"**{strongest_driver_name}** "
         f"({strongest_driver['direction']})."
     )
+
 
     st.caption(
         explanation[
             "interpretation_note"
         ]
     )
+
 
 else:
 
@@ -880,13 +1110,15 @@ else:
 
 
 # ============================================================
-# CHAPTER 6 — PPO STRATEGY SIMULATION
+# CHAPTER 6 — SIMULATE
 # ============================================================
 
 st.divider()
 
 st.html(
-    '<div class="section-kicker">Chapter 6 · Simulate</div>'
+    '<div class="section-kicker">'
+    'Chapter 6 · Simulate'
+    '</div>'
 )
 
 st.subheader(
@@ -918,10 +1150,12 @@ if simulation.get(
             f"{first_action['governance_profile']}"
         )
 
+
     sim_summary = simulation.get(
         "summary",
         {},
     )
+
 
     initial_profit_margin = sim_summary.get(
         "initial_profit_margin",
@@ -943,6 +1177,14 @@ if simulation.get(
         0,
     )
 
+    initial_debt_ratio = sim_summary.get(
+        "initial_debt_ratio"
+    )
+
+    final_debt_ratio = sim_summary.get(
+        "final_debt_ratio"
+    )
+
     initial_distress_probability = sim_summary.get(
         "initial_distress_probability",
         0,
@@ -952,6 +1194,7 @@ if simulation.get(
         "final_distress_probability",
         0,
     )
+
 
     sim_col1, sim_col2, sim_col3 = (
         st.columns(3)
@@ -968,6 +1211,7 @@ if simulation.get(
             ),
         )
 
+
     with sim_col2:
 
         st.metric(
@@ -978,6 +1222,7 @@ if simulation.get(
                 f"{final_cash_ratio:.3f}"
             ),
         )
+
 
     with sim_col3:
 
@@ -990,10 +1235,12 @@ if simulation.get(
             ),
         )
 
+
     st.caption(
         "Starting financial state → simulated position "
         "after four quarters."
     )
+
 
     trajectory_df = pd.DataFrame(
         simulation[
@@ -1001,26 +1248,124 @@ if simulation.get(
         ]
     )
 
+
+    # --------------------------------------------------------
+    # SCENARIO TRAJECTORY CHART
+    # --------------------------------------------------------
+
+    st.markdown(
+        "### Scenario Trajectory"
+    )
+
+
+    initial_chart_row = {
+        "Quarter": "Start",
+        "Profit Margin":
+            initial_profit_margin,
+        "Cash Ratio":
+            initial_cash_ratio,
+        "Distress Probability":
+            initial_distress_probability,
+    }
+
+    if initial_debt_ratio is not None:
+
+        initial_chart_row[
+            "Debt Ratio"
+        ] = initial_debt_ratio
+
+
+    chart_rows = [
+        initial_chart_row
+    ]
+
+
+    for _, row in trajectory_df.iterrows():
+
+        chart_row = {
+            "Quarter":
+                f"Q{int(row['quarter'])}",
+
+            "Profit Margin":
+                row[
+                    "profit_margin_after"
+                ],
+
+            "Cash Ratio":
+                row[
+                    "cash_ratio_after"
+                ],
+
+            "Distress Probability":
+                row[
+                    "distress_probability_after"
+                ],
+        }
+
+        if (
+            "debt_ratio_after"
+            in row.index
+        ):
+
+            chart_row[
+                "Debt Ratio"
+            ] = row[
+                "debt_ratio_after"
+            ]
+
+        chart_rows.append(
+            chart_row
+        )
+
+
+    chart_df = (
+        pd.DataFrame(
+            chart_rows
+        )
+        .set_index(
+            "Quarter"
+        )
+    )
+
+
+    st.line_chart(
+        chart_df,
+        use_container_width=True,
+        height=320,
+    )
+
+    st.caption(
+        "Values are shown on their native ratio/proportion scale. "
+        "The chart represents the modeled Chapter 6 scenario, "
+        "not a guaranteed forecast."
+    )
+
+
+    # --------------------------------------------------------
+    # EXECUTIVE-FRIENDLY STRATEGY TABLE
+    # --------------------------------------------------------
+
+    st.markdown(
+        "### Strategy Path"
+    )
+
+
     trajectory_display = (
         trajectory_df[
             [
                 "quarter",
-                "action_id",
                 "strategy",
                 "profit_margin_after",
                 "cash_ratio_after",
                 "debt_ratio_after",
                 "distress_probability_after",
-                "reward",
             ]
         ]
+        .copy()
         .rename(
             columns={
                 "quarter":
                     "Quarter",
-
-                "action_id":
-                    "Action ID",
 
                 "strategy":
                     "PPO Strategy",
@@ -1036,16 +1381,75 @@ if simulation.get(
 
                 "distress_probability_after":
                     "Distress Probability",
-
-                "reward":
-                    "Reward",
             }
         )
     )
 
-    st.markdown(
-        "### Strategy Path"
+
+    trajectory_display[
+        "Quarter"
+    ] = (
+        trajectory_display[
+            "Quarter"
+        ]
+        .apply(
+            lambda x:
+            f"Q{int(x)}"
+        )
     )
+
+
+    trajectory_display[
+        "Profit Margin"
+    ] = (
+        trajectory_display[
+            "Profit Margin"
+        ]
+        .apply(
+            lambda x:
+            f"{x:.2%}"
+        )
+    )
+
+
+    trajectory_display[
+        "Cash Ratio"
+    ] = (
+        trajectory_display[
+            "Cash Ratio"
+        ]
+        .apply(
+            lambda x:
+            f"{x:.3f}"
+        )
+    )
+
+
+    trajectory_display[
+        "Debt Ratio"
+    ] = (
+        trajectory_display[
+            "Debt Ratio"
+        ]
+        .apply(
+            lambda x:
+            f"{x:.3f}"
+        )
+    )
+
+
+    trajectory_display[
+        "Distress Probability"
+    ] = (
+        trajectory_display[
+            "Distress Probability"
+        ]
+        .apply(
+            lambda x:
+            f"{x:.2%}"
+        )
+    )
+
 
     st.dataframe(
         trajectory_display,
@@ -1053,11 +1457,59 @@ if simulation.get(
         use_container_width=True,
     )
 
-    st.caption(
-        simulation[
-            "interpretation_note"
-        ]
-    )
+
+    # --------------------------------------------------------
+    # TECHNICAL DETAILS
+    # --------------------------------------------------------
+
+    with st.expander(
+        "Technical simulation details"
+    ):
+
+        technical_table = (
+            trajectory_df[
+                [
+                    "quarter",
+                    "action_id",
+                    "reward",
+                ]
+            ]
+            .copy()
+            .rename(
+                columns={
+                    "quarter":
+                        "Quarter",
+
+                    "action_id":
+                        "Action ID",
+
+                    "reward":
+                        "Reward",
+                }
+            )
+        )
+
+        technical_table[
+            "Reward"
+        ] = (
+            technical_table[
+                "Reward"
+            ]
+            .round(4)
+        )
+
+        st.dataframe(
+            technical_table,
+            hide_index=True,
+            use_container_width=True,
+        )
+
+        st.caption(
+            simulation[
+                "interpretation_note"
+            ]
+        )
+
 
 else:
 
@@ -1073,12 +1525,15 @@ else:
 st.divider()
 
 st.html(
-    '<div class="section-kicker">Executive Decision Support</div>'
+    '<div class="section-kicker">'
+    'Executive Decision Support'
+    '</div>'
 )
 
 st.subheader(
     "AI CFO Executive Decision Brief"
 )
+
 
 if executive_brief.get(
     "status"
@@ -1095,6 +1550,7 @@ if executive_brief.get(
         f"{executive_brief.get('model')}"
     )
 
+
 else:
 
     st.info(
@@ -1102,6 +1558,7 @@ else:
         "is not connected yet. The structured AI CFO "
         "decision summary is shown below."
     )
+
 
     risk_outlook = executive_brief.get(
         "risk_outlook",
@@ -1134,6 +1591,7 @@ else:
         )
     )
 
+
     st.markdown(
         "#### Risk Outlook"
     )
@@ -1148,6 +1606,7 @@ else:
             "next-quarter financial distress probability."
         )
 
+
     if top_recommendation:
 
         st.markdown(
@@ -1161,7 +1620,18 @@ else:
             f"**{top_recommendation['score']:.3f}**."
         )
 
+
     if strongest_driver:
+
+        executive_driver_name = (
+            strongest_driver[
+                "feature"
+            ]
+            .replace(
+                "_",
+                " ",
+            )
+        )
 
         st.markdown(
             "#### Explainability"
@@ -1169,9 +1639,10 @@ else:
 
         st.write(
             "The strongest Chapter 5 SHAP driver is "
-            f"**{strongest_driver['feature']}**, which "
+            f"**{executive_driver_name}**, which "
             f"**{strongest_driver['direction']}**."
         )
+
 
     if local_simulation:
 
@@ -1195,6 +1666,7 @@ else:
             f"**{local_simulation.get('final_distress_probability', 0):.2%}**."
         )
 
+
     if simulation_interpretation:
 
         st.markdown(
@@ -1215,12 +1687,14 @@ else:
             )
         )
 
+
         if simulation_outcome == "improving":
 
             st.success(
                 f"**Scenario Assessment: Improving**\n\n"
                 f"{simulation_message}"
             )
+
 
         elif simulation_outcome == "deteriorating":
 
@@ -1229,6 +1703,7 @@ else:
                 f"{simulation_message}"
             )
 
+
         elif simulation_outcome == "mixed":
 
             st.warning(
@@ -1236,11 +1711,13 @@ else:
                 f"{simulation_message}"
             )
 
+
         else:
 
             st.info(
                 simulation_message
             )
+
 
     st.caption(
         executive_brief.get(
@@ -1251,7 +1728,7 @@ else:
 
 
 # ============================================================
-# MODEL GOVERNANCE NOTICE
+# MODEL GOVERNANCE
 # ============================================================
 
 st.divider()
@@ -1264,7 +1741,8 @@ st.caption(
     "AI CFO is a research-based decision-support system. "
     "Predictive outputs, SHAP explanations, governance-aware "
     "recommendations, and PPO simulations should be interpreted "
-    "within their respective model assumptions. Simulated outcomes "
-    "are scenarios, not guaranteed business results."
-)    
-                     
+    "within their respective model assumptions. "
+    "Simulation outputs are scenario-based modeled outcomes, "
+    "not guaranteed business results or financial advice."
+)  
+     
