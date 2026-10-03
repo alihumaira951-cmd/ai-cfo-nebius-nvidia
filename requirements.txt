@@ -1,0 +1,14 @@
+openai
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+shap
+dowhy
+gymnasium
+stable-baselines3
+torch
+joblib
+streamlit
+python-dotenv
