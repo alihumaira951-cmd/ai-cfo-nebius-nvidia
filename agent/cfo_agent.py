@@ -34,8 +34,16 @@ def _build_executive_prompt(
             "Clearly distinguish predictive results, SHAP "
             "explanations, governance-aware recommendations, "
             "and simulated PPO scenario outcomes. "
-            "Present the result as concise executive "
-            "decision-support, not as guaranteed financial advice."
+            "Do not present simulated improvements as guaranteed "
+            "real-world outcomes. "
+            "Explicitly identify tradeoffs or mixed outcomes. "
+            "For example, if profitability or liquidity improves "
+            "while distress probability remains elevated or worsens, "
+            "state that clearly and explain that operational improvement "
+            "does not necessarily resolve underlying balance-sheet or "
+            "financial distress risk. "
+            "Present the result as concise executive decision-support, "
+            "not as guaranteed financial advice."
         ),
     }
 
@@ -60,7 +68,14 @@ def _build_executive_prompt(
             "3. Why that recommendation was selected\n"
             "4. What the PPO simulation suggests over the next "
             "four quarters\n"
-            "5. Important governance or model limitations\n"
+            "5. Whether the simulation shows improvement, "
+            "deterioration, or a mixed outcome\n"
+            "6. Important governance or model limitations\n\n"
+            "When interpreting the simulation, compare the initial "
+            "and final profitability, liquidity, leverage, and distress "
+            "measures when available. If some measures improve while "
+            "distress remains elevated, describe this as a mixed outcome "
+            "rather than a successful recovery."
         ),
     }
 
@@ -68,6 +83,164 @@ def _build_executive_prompt(
         system_message,
         user_message,
     ]
+
+
+def _interpret_simulation(
+    simulation_summary: dict
+) -> dict:
+    """
+    Create a conservative interpretation of the Chapter 6
+    simulated trajectory.
+
+    The purpose is to distinguish:
+    - broad improvement,
+    - broad deterioration,
+    - mixed outcomes.
+
+    Simulation results remain scenario-based and are not
+    treated as guaranteed forecasts.
+    """
+
+    if not simulation_summary:
+        return {
+            "outcome": "unavailable",
+            "message": (
+                "A four-quarter simulation summary is not available "
+                "for this company-quarter."
+            ),
+        }
+
+    initial_profit_margin = simulation_summary.get(
+        "initial_profit_margin"
+    )
+    final_profit_margin = simulation_summary.get(
+        "final_profit_margin"
+    )
+
+    initial_cash_ratio = simulation_summary.get(
+        "initial_cash_ratio"
+    )
+    final_cash_ratio = simulation_summary.get(
+        "final_cash_ratio"
+    )
+
+    initial_debt_ratio = simulation_summary.get(
+        "initial_debt_ratio"
+    )
+    final_debt_ratio = simulation_summary.get(
+        "final_debt_ratio"
+    )
+
+    initial_distress = simulation_summary.get(
+        "initial_distress_probability"
+    )
+    final_distress = simulation_summary.get(
+        "final_distress_probability"
+    )
+
+    profit_improved = (
+        initial_profit_margin is not None
+        and final_profit_margin is not None
+        and final_profit_margin > initial_profit_margin
+    )
+
+    cash_improved = (
+        initial_cash_ratio is not None
+        and final_cash_ratio is not None
+        and final_cash_ratio > initial_cash_ratio
+    )
+
+    debt_improved = (
+        initial_debt_ratio is not None
+        and final_debt_ratio is not None
+        and final_debt_ratio < initial_debt_ratio
+    )
+
+    distress_improved = (
+        initial_distress is not None
+        and final_distress is not None
+        and final_distress < initial_distress
+    )
+
+    distress_remains_high = (
+        final_distress is not None
+        and final_distress >= 0.77
+    )
+
+    operating_improvements = sum([
+        profit_improved,
+        cash_improved,
+        debt_improved,
+    ])
+
+    if (
+        operating_improvements >= 1
+        and not distress_improved
+    ):
+        outcome = "mixed"
+
+        if distress_remains_high:
+            message = (
+                "The simulated operating path shows improvement in "
+                "one or more financial measures, but financial distress "
+                "remains elevated. This suggests that operating actions "
+                "alone may be insufficient to resolve the underlying "
+                "financial risk and that balance-sheet intervention may "
+                "still be necessary."
+            )
+        else:
+            message = (
+                "The simulated operating path shows improvement in "
+                "one or more financial measures, but the distress "
+                "probability does not improve. This should be interpreted "
+                "as a mixed outcome rather than a full recovery."
+            )
+
+    elif (
+        operating_improvements >= 1
+        and distress_improved
+    ):
+        outcome = "improving"
+
+        message = (
+            "The simulated path shows improvement in operating or "
+            "liquidity measures together with a reduction in modeled "
+            "financial distress. This represents a favorable scenario "
+            "within the Chapter 6 environment, not a guaranteed "
+            "real-world forecast."
+        )
+
+    elif (
+        operating_improvements == 0
+        and not distress_improved
+    ):
+        outcome = "deteriorating"
+
+        message = (
+            "The simulated path does not show broad financial improvement "
+            "and modeled distress does not decline. This indicates a "
+            "deteriorating or unresolved scenario within the Chapter 6 "
+            "simulation environment."
+        )
+
+    else:
+        outcome = "mixed"
+
+        message = (
+            "The simulation produces offsetting financial effects. "
+            "The results should be interpreted as a mixed scenario rather "
+            "than evidence of a clear recovery or deterioration."
+        )
+
+    return {
+        "outcome": outcome,
+        "message": message,
+        "profit_margin_improved": profit_improved,
+        "cash_ratio_improved": cash_improved,
+        "debt_ratio_improved": debt_improved,
+        "distress_probability_improved": distress_improved,
+        "distress_remains_high": distress_remains_high,
+    }
 
 
 def _build_local_brief(
@@ -113,31 +286,48 @@ def _build_local_brief(
         .get("summary", {})
     )
 
+    simulation_interpretation = (
+        _interpret_simulation(
+            simulation_summary
+        )
+    )
+
     return {
         "status": "local_fallback",
+
         "reason": (
             "Nebius Token Factory is not configured yet."
         ),
+
         "risk_outlook": {
             "distress_probability":
                 distress.get(
                     "distress_probability"
                 ),
+
             "predicted_distress":
                 distress.get(
                     "predicted_distress"
                 ),
+
             "classification_threshold":
                 distress.get(
                     "classification_threshold"
                 ),
         },
+
         "top_recommendation":
             top_recommendation,
+
         "strongest_explanation_driver":
             strongest_driver,
+
         "simulation_summary":
             simulation_summary,
+
+        "simulation_interpretation":
+            simulation_interpretation,
+
         "note": (
             "This is a structured local summary of the "
             "underlying AI CFO tools. Once Nebius access is "
@@ -255,5 +445,3 @@ def run_cfo_analysis(
         "executive_brief":
             executive_brief,
     }
-
-
