@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from stable_baselines3 import PPO
 
+from tools.smbgym_env import SMBGymRealDistressEnv
+
 
 # ------------------------------------------------------------
 # Chapter 6 state-variable order
@@ -38,14 +40,24 @@ STATE_VARS = [
 ]
 
 
+# Four quarters = one-year strategy horizon for the hackathon demo.
+ROLLOUT_QUARTERS = 4
+
+# Use the same low-noise evaluation setting used in the
+# finalized Chapter 6 policy evaluation.
+ROLLOUT_NOISE = 0.02
+
+ROLLOUT_SEED = 42
+
+
 # ------------------------------------------------------------
 # Locate Chapter 6 artifacts
 # ------------------------------------------------------------
 
 def _get_chapter6_paths():
     """
-    Locate the finalized Chapter 6 PPO model, environment panel,
-    and governance-aware action registry.
+    Locate the finalized Chapter 6 PPO model,
+    real-distress panel, and action registry.
     """
 
     thesis_root = os.environ.get(
@@ -90,7 +102,7 @@ def _get_chapter6_paths():
 
 
 # ------------------------------------------------------------
-# Locate company-quarter in finalized Chapter 6 panel
+# Find company-quarter
 # ------------------------------------------------------------
 
 def _get_company_state(
@@ -98,22 +110,25 @@ def _get_company_state(
     panel_df: pd.DataFrame,
 ):
     """
-    Locate a specific company-quarter in the finalized
-    Chapter 6 real-distress environment panel.
+    Locate the requested company-quarter in the finalized
+    Chapter 6 environment panel.
     """
 
-    if "cik" not in company_data:
-        return None, {
-            "tool": "simulate_strategy",
-            "status": "missing_identifiers",
-            "missing_fields": ["cik"],
-        }
+    missing_fields = [
+        field
+        for field in ["cik", "period"]
+        if field not in company_data
+    ]
 
-    if "period" not in company_data:
+    if missing_fields:
         return None, {
             "tool": "simulate_strategy",
             "status": "missing_identifiers",
-            "missing_fields": ["period"],
+            "missing_fields": missing_fields,
+            "message": (
+                "Chapter 6 simulation requires both "
+                "cik and period."
+            ),
         }
 
     input_cik = str(
@@ -122,28 +137,27 @@ def _get_company_state(
 
     input_period = pd.to_datetime(
         company_data["period"]
-    ).strftime("%Y-%m-%d")
+    ).strftime(
+        "%Y-%m-%d"
+    )
 
-    working_df = panel_df.copy()
-
-    working_df["cik"] = (
-        working_df["cik"]
+    panel_cik = (
+        panel_df["cik"]
         .astype(str)
     )
 
-    working_df["period"] = (
+    panel_period = (
         pd.to_datetime(
-            working_df["period"]
+            panel_df["period"]
         )
-        .dt.strftime("%Y-%m-%d")
+        .dt.strftime(
+            "%Y-%m-%d"
+        )
     )
 
-    match = working_df[
-        (working_df["cik"] == input_cik)
-        & (
-            working_df["period"]
-            == input_period
-        )
+    match = panel_df[
+        (panel_cik == input_cik)
+        & (panel_period == input_period)
     ]
 
     if match.empty:
@@ -158,83 +172,119 @@ def _get_company_state(
             ),
         }
 
-    return match.iloc[0], None
+    return (
+        match.iloc[0],
+        None,
+    )
 
 
 # ------------------------------------------------------------
-# Normalize Chapter 6 state
+# Initialize environment at requested company state
 # ------------------------------------------------------------
 
-def _build_normalized_observation(
-    company_row: pd.Series,
+def _initialize_company_environment(
     panel_df: pd.DataFrame,
+    action_df: pd.DataFrame,
+    company_row: pd.Series,
 ):
     """
-    Reproduce the Chapter 6 environment normalization.
+    Build the finalized Chapter 6 environment using the full
+    training panel for normalization, then set its initial
+    state to the requested company-quarter.
 
-    Each state variable is standardized using the mean and
-    standard deviation of the finalized Chapter 6 panel and
-    clipped to the PPO observation range [-3, 3].
+    This preserves the original Chapter 6 normalization logic
+    rather than recomputing scalers from a single company row.
     """
 
-    means = (
-        panel_df[STATE_VARS]
-        .mean()
+    env = SMBGymRealDistressEnv(
+        data=panel_df,
+        state_vars=STATE_VARS,
+        action_registry=action_df,
+        max_steps=ROLLOUT_QUARTERS,
+        stochastic_noise=ROLLOUT_NOISE,
+        seed=ROLLOUT_SEED,
     )
 
-    stds = (
-        panel_df[STATE_VARS]
-        .std()
-        .clip(lower=1e-6)
+    raw_state = {
+        variable: float(
+            company_row[variable]
+        )
+        for variable in STATE_VARS
+    }
+
+    env.current_raw_state = (
+        raw_state.copy()
     )
 
-    raw_state = (
-        company_row[STATE_VARS]
-        .astype(float)
+    env.current_info = {
+        "cik": str(
+            company_row.get(
+                "cik"
+            )
+        ),
+        "company_name": company_row.get(
+            "company_name"
+        ),
+        "economic_regime": company_row.get(
+            "economic_regime"
+        ),
+        "economic_regime_code": company_row.get(
+            "economic_regime_code"
+        ),
+    }
+
+    env.step_count = 0
+
+    env.initial_distress = float(
+        raw_state[
+            "distress_prob_h1"
+        ]
     )
 
-    normalized_state = (
-        (raw_state - means)
-        / stds
-    ).clip(
-        -3.0,
-        3.0,
-    )
-
-    observation = (
-        normalized_state
-        .to_numpy(
-            dtype=np.float32
+    env.baseline_distress_probability = float(
+        np.clip(
+            env.initial_distress,
+            1e-6,
+            1.0 - 1e-6,
         )
     )
 
-    return (
-        raw_state,
-        normalized_state,
-        observation,
+    env.baseline_distress_logit = (
+        env._probability_to_logit(
+            env.baseline_distress_probability
+        )
     )
+
+    env.current_obs = (
+        env._normalize_state(
+            env.current_raw_state
+        )
+    )
+
+    return env
 
 
 # ------------------------------------------------------------
-# Chapter 6 PPO strategy selection
+# Run Chapter 6 PPO simulation
 # ------------------------------------------------------------
 
 def simulate_strategy(
     strategy_input: dict
 ) -> dict:
     """
-    Use the finalized Chapter 6 PPO policy to select a
-    governance-aware financial strategy for a company-quarter.
+    Run a four-quarter PPO-driven strategy simulation using
+    the finalized Chapter 6 SMBGym real-distress environment.
 
-    The policy operates on the 24-variable state representation
-    used in the dissertation's SMBGym real-distress environment.
+    At each quarter:
 
-    This function currently performs PPO policy inference for the
-    starting state. Multi-quarter stochastic rollout simulation
-    will be added separately.
+    1. PPO observes the current normalized financial state.
+    2. PPO selects one of 108 governance-aware actions.
+    3. SMBGym applies the financial and macro transition logic.
+    4. The resulting state becomes the next quarter's input.
 
-    Results are model-based decision support and should not be
-    interpreted as guaranteed real-world business outcomes.
+    Results represent simulated decision support within the
+    Chapter 6 environment and are not guaranteed real-world
+    business outcomes.
     """
 
     (
@@ -244,20 +294,24 @@ def simulate_strategy(
     ) = _get_chapter6_paths()
 
     # --------------------------------------------------------
-    # Load finalized Chapter 6 artifacts
+    # Load Chapter 6 artifacts
     # --------------------------------------------------------
 
     panel_df = pd.read_parquet(
         panel_path
     )
 
-    action_df = pd.read_csv(
-        action_registry_path
+    action_df = (
+        pd.read_csv(
+            action_registry_path
+        )
+        .sort_values(
+            "action_id"
+        )
+        .reset_index(
+            drop=True
+        )
     )
-
-    # --------------------------------------------------------
-    # Find company-quarter
-    # --------------------------------------------------------
 
     company_row, error_result = (
         _get_company_state(
@@ -270,23 +324,19 @@ def simulate_strategy(
         return error_result
 
     # --------------------------------------------------------
-    # Build PPO observation
+    # Build company-specific environment while preserving
+    # full-panel Chapter 6 normalization.
     # --------------------------------------------------------
 
-    (
-        raw_state,
-        normalized_state,
-        observation,
-    ) = _build_normalized_observation(
-        company_row,
-        panel_df,
+    env = _initialize_company_environment(
+        panel_df=panel_df,
+        action_df=action_df,
+        company_row=company_row,
     )
 
-    if observation.shape != (24,):
-        raise ValueError(
-            "Chapter 6 PPO observation must contain "
-            f"24 variables. Received {observation.shape}."
-        )
+    initial_state = (
+        env.current_raw_state.copy()
+    )
 
     # --------------------------------------------------------
     # Load trained PPO policy
@@ -297,45 +347,226 @@ def simulate_strategy(
     )
 
     # --------------------------------------------------------
-    # Select deterministic PPO action
+    # Run sequential multi-quarter PPO rollout
     # --------------------------------------------------------
 
-    action, _ = ppo_model.predict(
-        observation,
-        deterministic=True,
-    )
+    trajectory = []
 
-    action_id = int(
-        np.asarray(action).item()
-    )
+    terminated = False
+    truncated = False
 
-    # --------------------------------------------------------
-    # Decode action through Chapter 6 registry
-    # --------------------------------------------------------
-
-    action_match = action_df[
-        action_df["action_id"]
-        == action_id
-    ]
-
-    if action_match.empty:
-        raise ValueError(
-            f"PPO selected action {action_id}, "
-            "but it does not exist in the Chapter 6 "
-            "action registry."
+    while (
+        not terminated
+        and not truncated
+    ):
+        state_before = (
+            env.current_raw_state.copy()
         )
 
-    selected_action = (
-        action_match.iloc[0]
+        action, _ = ppo_model.predict(
+            env.current_obs,
+            deterministic=True,
+        )
+
+        action_id = int(
+            np.asarray(
+                action
+            ).item()
+        )
+
+        action_match = action_df[
+            action_df["action_id"]
+            == action_id
+        ]
+
+        if action_match.empty:
+            raise ValueError(
+                f"PPO selected action {action_id}, "
+                "but that action is not present "
+                "in the Chapter 6 registry."
+            )
+
+        selected_action = (
+            action_match.iloc[0]
+        )
+
+        (
+            next_obs,
+            reward,
+            terminated,
+            truncated,
+            step_info,
+        ) = env.step(
+            action_id
+        )
+
+        state_after = (
+            env.current_raw_state.copy()
+        )
+
+        trajectory.append(
+            {
+                "quarter":
+                    int(
+                        step_info[
+                            "step"
+                        ]
+                    ),
+
+                "action_id":
+                    action_id,
+
+                "strategy":
+                    selected_action[
+                        "action_description"
+                    ],
+
+                "governance_profile":
+                    selected_action[
+                        "governance_profile"
+                    ],
+
+                "governance_penalty":
+                    float(
+                        selected_action[
+                            "governance_penalty"
+                        ]
+                    ),
+
+                "reward":
+                    float(
+                        reward
+                    ),
+
+                "profit_margin_before":
+                    float(
+                        state_before[
+                            "profit_margin"
+                        ]
+                    ),
+
+                "profit_margin_after":
+                    float(
+                        state_after[
+                            "profit_margin"
+                        ]
+                    ),
+
+                "cash_ratio_before":
+                    float(
+                        state_before[
+                            "cash_ratio"
+                        ]
+                    ),
+
+                "cash_ratio_after":
+                    float(
+                        state_after[
+                            "cash_ratio"
+                        ]
+                    ),
+
+                "current_ratio_before":
+                    float(
+                        state_before[
+                            "current_ratio"
+                        ]
+                    ),
+
+                "current_ratio_after":
+                    float(
+                        state_after[
+                            "current_ratio"
+                        ]
+                    ),
+
+                "debt_ratio_before":
+                    float(
+                        state_before[
+                            "debt_ratio"
+                        ]
+                    ),
+
+                "debt_ratio_after":
+                    float(
+                        state_after[
+                            "debt_ratio"
+                        ]
+                    ),
+
+                "revenue_growth_before":
+                    float(
+                        state_before[
+                            "revenue_growth_qoq"
+                        ]
+                    ),
+
+                "revenue_growth_after":
+                    float(
+                        state_after[
+                            "revenue_growth_qoq"
+                        ]
+                    ),
+
+                "distress_probability_before":
+                    float(
+                        state_before[
+                            "distress_prob_h1"
+                        ]
+                    ),
+
+                "distress_probability_after":
+                    float(
+                        state_after[
+                            "distress_prob_h1"
+                        ]
+                    ),
+
+                "bankrupt":
+                    bool(
+                        step_info[
+                            "bankrupt"
+                        ]
+                    ),
+
+                "recovered":
+                    bool(
+                        step_info[
+                            "recovered"
+                        ]
+                    ),
+            }
+        )
+
+    # --------------------------------------------------------
+    # Final state and summary
+    # --------------------------------------------------------
+
+    final_state = (
+        env.current_raw_state.copy()
     )
 
-    # --------------------------------------------------------
-    # Return structured Chapter 6 result
-    # --------------------------------------------------------
+    total_reward = float(
+        sum(
+            step[
+                "reward"
+            ]
+            for step in trajectory
+        )
+    )
+
+    first_action = (
+        trajectory[0]
+        if trajectory
+        else None
+    )
 
     return {
-        "tool": "simulate_strategy",
-        "status": "success",
+        "tool":
+            "simulate_strategy",
+
+        "status":
+            "success",
 
         "company_name":
             company_row.get(
@@ -365,92 +596,125 @@ def simulate_strategy(
             "SMBGymRealDistressEnv",
 
         "state_dimension":
-            len(STATE_VARS),
+            len(
+                STATE_VARS
+            ),
 
         "action_space_size":
             int(
-                len(action_df)
+                len(
+                    action_df
+                )
             ),
 
-        "selected_action_id":
-            action_id,
+        "simulation_horizon_quarters":
+            ROLLOUT_QUARTERS,
 
-        "selected_strategy": {
-            "cost_control":
-                int(
-                    selected_action[
-                        "cost_control"
-                    ]
+        "initial_selected_action":
+            first_action,
+
+        "trajectory":
+            trajectory,
+
+        "summary": {
+            "quarters_simulated":
+                len(
+                    trajectory
                 ),
 
-            "pricing_strategy":
-                int(
-                    selected_action[
-                        "pricing_strategy"
-                    ]
-                ),
+            "total_reward":
+                total_reward,
 
-            "hiring_strategy":
-                int(
-                    selected_action[
-                        "hiring_strategy"
-                    ]
-                ),
-
-            "debt_strategy":
-                int(
-                    selected_action[
-                        "debt_strategy"
-                    ]
-                ),
-
-            "investment_strategy":
-                int(
-                    selected_action[
-                        "investment_strategy"
-                    ]
-                ),
-
-            "governance_profile":
-                selected_action[
-                    "governance_profile"
-                ],
-
-            "governance_penalty":
+            "initial_profit_margin":
                 float(
-                    selected_action[
-                        "governance_penalty"
+                    initial_state[
+                        "profit_margin"
                     ]
                 ),
 
-            "description":
-                selected_action[
-                    "action_description"
-                ],
-        },
+            "final_profit_margin":
+                float(
+                    final_state[
+                        "profit_margin"
+                    ]
+                ),
 
-        "initial_state": {
-            variable: float(
-                raw_state[variable]
-            )
-            for variable in STATE_VARS
+            "initial_cash_ratio":
+                float(
+                    initial_state[
+                        "cash_ratio"
+                    ]
+                ),
+
+            "final_cash_ratio":
+                float(
+                    final_state[
+                        "cash_ratio"
+                    ]
+                ),
+
+            "initial_debt_ratio":
+                float(
+                    initial_state[
+                        "debt_ratio"
+                    ]
+                ),
+
+            "final_debt_ratio":
+                float(
+                    final_state[
+                        "debt_ratio"
+                    ]
+                ),
+
+            "initial_distress_probability":
+                float(
+                    initial_state[
+                        "distress_prob_h1"
+                    ]
+                ),
+
+            "final_distress_probability":
+                float(
+                    final_state[
+                        "distress_prob_h1"
+                    ]
+                ),
+
+            "bankruptcy_occurred":
+                any(
+                    step[
+                        "bankrupt"
+                    ]
+                    for step in trajectory
+                ),
+
+            "recovery_occurred":
+                any(
+                    step[
+                        "recovered"
+                    ]
+                    for step in trajectory
+                ),
         },
 
         "method":
             (
-                "Chapter 6 PPO policy inference "
-                "using the finalized real-distress "
-                "SMBGym state representation"
+                "Four-quarter sequential PPO rollout using "
+                "the finalized Chapter 6 real-distress "
+                "SMBGym environment."
             ),
 
-        "interpretation_note": (
-            "The PPO-selected strategy is generated within "
-            "the Chapter 6 simulated financial environment. "
-            "It represents model-based scenario decision "
-            "support and is not a guaranteed real-world outcome."
-        ),
+        "interpretation_note":
+            (
+                "The trajectory is generated by the Chapter 6 "
+                "simulated financial environment using modeled "
+                "transition assumptions and stochastic variation. "
+                "It is scenario-based decision support and should "
+                "not be interpreted as a guaranteed forecast of "
+                "real-world financial outcomes."
+            ),
 
         "rollout_status":
-            "not_yet_connected",
+            "connected",
     }
-      
