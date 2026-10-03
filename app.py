@@ -15,6 +15,98 @@ st.set_page_config(
     page_title="AI CFO",
     page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+
+# ============================================================
+# VISUAL STYLING
+# ============================================================
+
+st.markdown(
+    """
+    <style>
+
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        max-width: 1350px;
+    }
+
+    .hero-card {
+        padding: 2.2rem 2.4rem;
+        border-radius: 18px;
+        border: 1px solid rgba(120, 120, 120, 0.22);
+        background: linear-gradient(
+            135deg,
+            rgba(28, 31, 38, 0.96),
+            rgba(45, 52, 65, 0.92)
+        );
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        letter-spacing: -0.04em;
+        color: white;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: #d8dce5;
+        margin-bottom: 1.4rem;
+    }
+
+    .pipeline-text {
+        display: inline-block;
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+        color: #e8eaf0;
+        font-size: 0.92rem;
+        font-weight: 500;
+    }
+
+    .section-kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        opacity: 0.65;
+        margin-bottom: 0.2rem;
+    }
+
+    .company-card {
+        padding: 1rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid rgba(120, 120, 120, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    div[data-testid="stMetric"] {
+        border: 1px solid rgba(120, 120, 120, 0.18);
+        border-radius: 14px;
+        padding: 1rem;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        font-weight: 600;
+    }
+
+    div[data-testid="stDataFrame"] {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    section[data-testid="stSidebar"] {
+        border-right: 1px solid rgba(120, 120, 120, 0.15);
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -61,7 +153,6 @@ def load_chapter3_panel():
         panel_path
     )
 
-    # Recreate Chapter 3 SIC encoding
     panel["sic"] = (
         panel["sic"]
         .astype(str)
@@ -123,29 +214,47 @@ model_features = list(
 
 
 # ============================================================
-# HEADER
+# HERO HEADER
 # ============================================================
 
-st.title(
-    "AI CFO"
-)
+st.markdown(
+    """
+    <div class="hero-card">
+        <div class="hero-title">AI CFO</div>
 
-st.subheader(
-    "Explainable Agentic Decision Intelligence "
-    "for Financial Management"
+        <div class="hero-subtitle">
+            Explainable Agentic Decision Intelligence
+            for Financial Management
+        </div>
+
+        <div class="pipeline-text">
+            Predict → Recommend → Explain → Simulate → Decide
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 st.caption(
-    "Prediction → Governance-Aware Recommendation → "
-    "Explainability → Strategy Simulation → Executive Decision Support"
+    "Research-driven financial decision support combining "
+    "predictive modeling, governance-aware recommendations, "
+    "explainable AI, reinforcement learning, and executive reasoning."
 )
-
-st.divider()
 
 
 # ============================================================
 # SIDEBAR — COMPANY SELECTION
 # ============================================================
+
+st.sidebar.markdown(
+    "## AI CFO"
+)
+
+st.sidebar.caption(
+    "Decision Intelligence Console"
+)
+
+st.sidebar.divider()
 
 st.sidebar.header(
     "Analysis Setup"
@@ -237,12 +346,19 @@ selected_period = pd.Timestamp(
 # ANALYSIS BUTTON
 # ============================================================
 
+st.sidebar.divider()
+
 run_analysis = (
     st.sidebar.button(
         "Run AI CFO Analysis",
         type="primary",
         use_container_width=True,
     )
+)
+
+st.sidebar.caption(
+    "Runs the complete Chapter 3–6 "
+    "decision intelligence pipeline."
 )
 
 
@@ -253,8 +369,12 @@ run_analysis = (
 if not run_analysis:
 
     st.info(
-        "Choose a company and quarter from the sidebar, "
-        "then click **Run AI CFO Analysis**."
+        "Select a company and reporting quarter from the "
+        "sidebar, then run the AI CFO analysis."
+    )
+
+    st.markdown(
+        "### Decision Intelligence Pipeline"
     )
 
     col1, col2, col3, col4 = st.columns(
@@ -262,36 +382,57 @@ if not run_analysis:
     )
 
     with col1:
+
         st.markdown(
-            "### Chapter 3"
+            "#### 01 · Predict"
         )
+
         st.write(
-            "Predictive financial risk modeling"
+            "Estimate next-quarter financial distress risk."
         )
 
     with col2:
+
         st.markdown(
-            "### Chapter 4"
+            "#### 02 · Recommend"
         )
+
         st.write(
-            "Governance-aware strategic recommendations"
+            "Generate governance-aware strategic actions."
         )
 
     with col3:
+
         st.markdown(
-            "### Chapter 5"
+            "#### 03 · Explain"
         )
+
         st.write(
-            "SHAP-based recommendation explanation"
+            "Identify the drivers behind the recommendation."
         )
 
     with col4:
+
         st.markdown(
-            "### Chapter 6"
+            "#### 04 · Simulate"
         )
+
         st.write(
-            "PPO strategy simulation"
+            "Stress-test strategy across four modeled quarters."
         )
+
+    st.divider()
+
+    st.markdown(
+        "### From Prediction to Decision"
+    )
+
+    st.write(
+        "Traditional financial AI often stops after predicting "
+        "what may happen. AI CFO extends that workflow by connecting "
+        "risk prediction to strategic recommendations, explainability, "
+        "multi-quarter simulation, and executive decision support."
+    )
 
     st.stop()
 
@@ -354,7 +495,8 @@ company_data["period"] = (
 # ============================================================
 
 with st.spinner(
-    "AI CFO is analyzing the company..."
+    "AI CFO is analyzing risk, recommendations, "
+    "explanations, and strategy scenarios..."
 ):
 
     result = run_cfo_analysis(
@@ -387,13 +529,18 @@ executive_brief = result[
 # COMPANY HEADER
 # ============================================================
 
+st.markdown(
+    '<div class="section-kicker">Company Analysis</div>',
+    unsafe_allow_html=True,
+)
+
 st.header(
     selected_company_name
 )
 
 st.caption(
-    f"Analysis period: "
-    f"{selected_period_string}"
+    f"Reporting period: {selected_period_string} "
+    f"• CIK {selected_cik}"
 )
 
 st.divider()
@@ -402,6 +549,11 @@ st.divider()
 # ============================================================
 # CHAPTER 3 — RISK OUTLOOK
 # ============================================================
+
+st.markdown(
+    '<div class="section-kicker">Chapter 3 · Predict</div>',
+    unsafe_allow_html=True,
+)
 
 st.subheader(
     "Financial Risk Outlook"
@@ -431,6 +583,7 @@ risk_col1, risk_col2, risk_col3 = (
 with risk_col1:
 
     if distress_probability is not None:
+
         st.metric(
             "Next-Quarter Distress Probability",
             f"{distress_probability:.2%}",
@@ -439,6 +592,7 @@ with risk_col1:
 with risk_col2:
 
     if distress_threshold is not None:
+
         st.metric(
             "Classification Threshold",
             f"{distress_threshold:.0%}",
@@ -463,6 +617,11 @@ with risk_col3:
 # ============================================================
 
 st.divider()
+
+st.markdown(
+    '<div class="section-kicker">Chapter 4 · Recommend</div>',
+    unsafe_allow_html=True,
+)
 
 st.subheader(
     "Governance-Aware Recommendations"
@@ -533,6 +692,11 @@ else:
 # ============================================================
 
 st.divider()
+
+st.markdown(
+    '<div class="section-kicker">Chapter 5 · Explain</div>',
+    unsafe_allow_html=True,
+)
 
 st.subheader(
     "Why This Recommendation?"
@@ -621,6 +785,11 @@ else:
 
 st.divider()
 
+st.markdown(
+    '<div class="section-kicker">Chapter 6 · Simulate</div>',
+    unsafe_allow_html=True,
+)
+
 st.subheader(
     "Four-Quarter Strategy Simulation"
 )
@@ -636,7 +805,7 @@ if simulation.get(
     if first_action:
 
         st.markdown(
-            "### Initial PPO Strategy"
+            "### PPO-Selected Strategy"
         )
 
         st.success(
@@ -804,6 +973,11 @@ else:
 
 st.divider()
 
+st.markdown(
+    '<div class="section-kicker">Executive Decision Support</div>',
+    unsafe_allow_html=True,
+)
+
 st.subheader(
     "AI CFO Executive Decision Brief"
 )
@@ -946,21 +1120,21 @@ else:
         if simulation_outcome == "improving":
 
             st.success(
-                f"**Scenario assessment: Improving**\n\n"
+                f"**Scenario Assessment: Improving**\n\n"
                 f"{simulation_message}"
             )
 
         elif simulation_outcome == "deteriorating":
 
             st.error(
-                f"**Scenario assessment: Deteriorating**\n\n"
+                f"**Scenario Assessment: Deteriorating**\n\n"
                 f"{simulation_message}"
             )
 
         elif simulation_outcome == "mixed":
 
             st.warning(
-                f"**Scenario assessment: Mixed Outcome**\n\n"
+                f"**Scenario Assessment: Mixed Outcome**\n\n"
                 f"{simulation_message}"
             )
 
@@ -984,6 +1158,10 @@ else:
 
 st.divider()
 
+st.markdown(
+    "#### Model Governance"
+)
+
 st.caption(
     "AI CFO is a research-based decision-support system. "
     "Predictive outputs, SHAP explanations, governance-aware "
@@ -991,17 +1169,7 @@ st.caption(
     "within their respective model assumptions. Simulated outcomes "
     "are scenarios, not guaranteed business results."
 )
- 
 
-
-
-  
    
-   
+    
 
- 
-
-  
-   
-
-  
