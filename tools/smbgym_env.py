@@ -29,6 +29,8 @@ class SMBGymEnv(gym.Env):
         stochastic_noise=0.03,
         seed=42,
         render_mode=None,
+        scaler_means=None,
+        scaler_stds=None,
     ):
         super().__init__()
 
@@ -54,7 +56,29 @@ class SMBGymEnv(gym.Env):
             dtype=np.float32,
         )
 
-        self._compute_scalers()
+        if (
+            scaler_means is not None
+            and scaler_stds is not None
+        ):
+            self.means = {
+                var: float(
+                    scaler_means[var]
+                )
+                for var in self.state_vars
+            }
+
+            self.stds = {
+                var: float(
+                    max(
+                        scaler_stds[var],
+                        1e-6,
+                    )
+                )
+                for var in self.state_vars
+            }
+
+        else:
+            self._compute_scalers()
 
         self.current_raw_state = None
         self.current_obs = None

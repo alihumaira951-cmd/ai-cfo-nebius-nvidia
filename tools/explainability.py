@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import joblib
@@ -50,23 +49,14 @@ SURROGATE_MODEL_FILES = {
 
 def _get_chapter5_model_dir():
     """
-    Locate the Chapter 5 SHAP surrogate model directory.
-
-    AI_CFO_THESIS_ROOT must point to the local dissertation project.
+    Locate the packaged Chapter 5 SHAP surrogate models.
     """
 
-    thesis_root = os.environ.get("AI_CFO_THESIS_ROOT")
-
-    if not thesis_root:
-        raise EnvironmentError(
-            "AI_CFO_THESIS_ROOT is not set. "
-            "Set it to the local Revised_AI_CFO_Thesis folder."
-        )
-
-    thesis_root = Path(thesis_root)
+    repo_root = Path(__file__).resolve().parents[1]
 
     return (
-        thesis_root
+        repo_root
+        / "deployment_artifacts"
         / "models"
         / "chapter5_xai"
     )

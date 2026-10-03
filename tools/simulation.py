@@ -1,4 +1,4 @@
-import os
+import json
 from pathlib import Path
 
 import numpy as np
@@ -40,63 +40,60 @@ STATE_VARS = [
 ]
 
 
-# Four quarters = one-year strategy horizon for the hackathon demo.
 ROLLOUT_QUARTERS = 4
-
-# Use the same low-noise evaluation setting used in the
-# finalized Chapter 6 policy evaluation.
 ROLLOUT_NOISE = 0.02
-
 ROLLOUT_SEED = 42
 
 
 # ------------------------------------------------------------
-# Locate Chapter 6 artifacts
+# Locate packaged Chapter 6 artifacts
 # ------------------------------------------------------------
 
 def _get_chapter6_paths():
     """
-    Locate the finalized Chapter 6 PPO model,
-    real-distress panel, and action registry.
+    Locate the deployment-safe Chapter 6 PPO model,
+    company-state table, saved training scalers, and
+    action registry.
     """
 
-    thesis_root = os.environ.get(
-        "AI_CFO_THESIS_ROOT"
+    repo_root = Path(
+        __file__
+    ).resolve().parents[1]
+
+    artifact_root = (
+        repo_root
+        / "deployment_artifacts"
     )
 
-    if not thesis_root:
-        raise EnvironmentError(
-            "AI_CFO_THESIS_ROOT is not set. "
-            "Set it to the local Revised_AI_CFO_Thesis folder."
-        )
-
-    thesis_root = Path(thesis_root)
-
     model_path = (
-        thesis_root
+        artifact_root
         / "models"
         / "rl"
         / "ppo_smbgym_real_distress_model.zip"
     )
 
-    panel_path = (
-        thesis_root
+    company_state_path = (
+        artifact_root
         / "data"
-        / "processed"
-        / "chapter6_smbgym_training_eligible_real_distress_panel.parquet"
+        / "chapter6_company_states.parquet"
+    )
+
+    scaler_path = (
+        artifact_root
+        / "data"
+        / "chapter6_scalers.json"
     )
 
     action_registry_path = (
-        thesis_root
-        / "results"
+        artifact_root
         / "tables"
-        / "chapter6"
         / "chapter6_action_space_registry.csv"
     )
 
     return (
         model_path,
-        panel_path,
+        company_state_path,
+        scaler_path,
         action_registry_path,
     )
 
@@ -107,27 +104,33 @@ def _get_chapter6_paths():
 
 def _get_company_state(
     company_data: dict,
-    panel_df: pd.DataFrame,
+    company_state_df: pd.DataFrame,
 ):
     """
-    Locate the requested company-quarter in the finalized
-    Chapter 6 environment panel.
+    Locate the requested company-quarter in the packaged
+    Chapter 6 company-state table.
     """
 
     missing_fields = [
         field
-        for field in ["cik", "period"]
+        for field in [
+            "cik",
+            "period",
+        ]
         if field not in company_data
     ]
 
     if missing_fields:
         return None, {
-            "tool": "simulate_strategy",
-            "status": "missing_identifiers",
-            "missing_fields": missing_fields,
+            "tool":
+                "simulate_strategy",
+            "status":
+                "missing_identifiers",
+            "missing_fields":
+                missing_fields,
             "message": (
-                "Chapter 6 simulation requires both "
-                "cik and period."
+                "Chapter 6 simulation requires "
+                "both cik and period."
             ),
         }
 
@@ -142,33 +145,46 @@ def _get_company_state(
     )
 
     panel_cik = (
-        panel_df["cik"]
+        company_state_df["cik"]
         .astype(str)
     )
 
     panel_period = (
         pd.to_datetime(
-            panel_df["period"]
+            company_state_df[
+                "period"
+            ]
         )
         .dt.strftime(
             "%Y-%m-%d"
         )
     )
 
-    match = panel_df[
-        (panel_cik == input_cik)
-        & (panel_period == input_period)
+    match = company_state_df[
+        (
+            panel_cik
+            == input_cik
+        )
+        & (
+            panel_period
+            == input_period
+        )
     ]
 
     if match.empty:
         return None, {
-            "tool": "simulate_strategy",
-            "status": "not_found",
-            "cik": input_cik,
-            "period": input_period,
+            "tool":
+                "simulate_strategy",
+            "status":
+                "not_found",
+            "cik":
+                input_cik,
+            "period":
+                input_period,
             "message": (
-                "No matching company-quarter was found "
-                "in the finalized Chapter 6 real-distress panel."
+                "No matching company-quarter was "
+                "found in the packaged Chapter 6 "
+                "company-state table."
             ),
         }
 
@@ -179,35 +195,100 @@ def _get_company_state(
 
 
 # ------------------------------------------------------------
+# Load saved Chapter 6 training scalers
+# ------------------------------------------------------------
+
+def _load_scalers(
+    scaler_path: Path
+):
+    """
+    Load the exact means and standard deviations computed
+    from the original Chapter 6 training-eligible panel.
+    """
+
+    with open(
+        scaler_path,
+        "r",
+    ) as file:
+
+        scalers = json.load(
+            file
+        )
+
+    means = scalers.get(
+        "means",
+        {},
+    )
+
+    stds = scalers.get(
+        "stds",
+        {},
+    )
+
+    missing_means = [
+        var
+        for var in STATE_VARS
+        if var not in means
+    ]
+
+    missing_stds = [
+        var
+        for var in STATE_VARS
+        if var not in stds
+    ]
+
+    if (
+        missing_means
+        or missing_stds
+    ):
+        raise ValueError(
+            "Chapter 6 scaler file is incomplete. "
+            f"Missing means: {missing_means}; "
+            f"missing stds: {missing_stds}."
+        )
+
+    return (
+        means,
+        stds,
+    )
+
+
+# ------------------------------------------------------------
 # Initialize environment at requested company state
 # ------------------------------------------------------------
 
 def _initialize_company_environment(
-    panel_df: pd.DataFrame,
+    company_state_df: pd.DataFrame,
     action_df: pd.DataFrame,
     company_row: pd.Series,
+    scaler_means: dict,
+    scaler_stds: dict,
 ):
     """
-    Build the finalized Chapter 6 environment using the full
-    training panel for normalization, then set its initial
-    state to the requested company-quarter.
+    Build the finalized Chapter 6 environment using the
+    saved training-panel normalization statistics, then
+    set the initial state to the requested company-quarter.
 
-    This preserves the original Chapter 6 normalization logic
-    rather than recomputing scalers from a single company row.
+    This preserves the original PPO observation scaling
+    without packaging the full Chapter 6 research panel.
     """
 
     env = SMBGymRealDistressEnv(
-        data=panel_df,
+        data=company_state_df,
         state_vars=STATE_VARS,
         action_registry=action_df,
         max_steps=ROLLOUT_QUARTERS,
         stochastic_noise=ROLLOUT_NOISE,
         seed=ROLLOUT_SEED,
+        scaler_means=scaler_means,
+        scaler_stds=scaler_stds,
     )
 
     raw_state = {
         variable: float(
-            company_row[variable]
+            company_row[
+                variable
+            ]
         )
         for variable in STATE_VARS
     }
@@ -217,20 +298,24 @@ def _initialize_company_environment(
     )
 
     env.current_info = {
-        "cik": str(
+        "cik":
+            str(
+                company_row.get(
+                    "cik"
+                )
+            ),
+        "company_name":
             company_row.get(
-                "cik"
-            )
-        ),
-        "company_name": company_row.get(
-            "company_name"
-        ),
-        "economic_regime": company_row.get(
-            "economic_regime"
-        ),
-        "economic_regime_code": company_row.get(
-            "economic_regime_code"
-        ),
+                "company_name"
+            ),
+        "economic_regime":
+            company_row.get(
+                "economic_regime"
+            ),
+        "economic_regime_code":
+            company_row.get(
+                "economic_regime_code"
+            ),
     }
 
     env.step_count = 0
@@ -275,30 +360,28 @@ def simulate_strategy(
     Run a four-quarter PPO-driven strategy simulation using
     the finalized Chapter 6 SMBGym real-distress environment.
 
-    At each quarter:
+    The deployment version uses:
+    - the trained PPO model,
+    - packaged company-quarter states,
+    - exact training normalization statistics,
+    - the original action registry,
+    - the original transition and reward logic.
 
-    1. PPO observes the current normalized financial state.
-    2. PPO selects one of 108 governance-aware actions.
-    3. SMBGym applies the financial and macro transition logic.
-    4. The resulting state becomes the next quarter's input.
-
-    Results represent simulated decision support within the
-    Chapter 6 environment and are not guaranteed real-world
-    business outcomes.
+    Results remain scenario-based decision support and are
+    not guaranteed real-world business outcomes.
     """
 
     (
         model_path,
-        panel_path,
+        company_state_path,
+        scaler_path,
         action_registry_path,
     ) = _get_chapter6_paths()
 
-    # --------------------------------------------------------
-    # Load Chapter 6 artifacts
-    # --------------------------------------------------------
-
-    panel_df = pd.read_parquet(
-        panel_path
+    company_state_df = (
+        pd.read_parquet(
+            company_state_path
+        )
     )
 
     action_df = (
@@ -313,42 +396,46 @@ def simulate_strategy(
         )
     )
 
-    company_row, error_result = (
-        _get_company_state(
-            strategy_input,
-            panel_df,
-        )
+    (
+        scaler_means,
+        scaler_stds,
+    ) = _load_scalers(
+        scaler_path
+    )
+
+    (
+        company_row,
+        error_result,
+    ) = _get_company_state(
+        strategy_input,
+        company_state_df,
     )
 
     if error_result is not None:
         return error_result
 
-    # --------------------------------------------------------
-    # Build company-specific environment while preserving
-    # full-panel Chapter 6 normalization.
-    # --------------------------------------------------------
-
-    env = _initialize_company_environment(
-        panel_df=panel_df,
-        action_df=action_df,
-        company_row=company_row,
+    env = (
+        _initialize_company_environment(
+            company_state_df=
+                company_state_df,
+            action_df=
+                action_df,
+            company_row=
+                company_row,
+            scaler_means=
+                scaler_means,
+            scaler_stds=
+                scaler_stds,
+        )
     )
 
     initial_state = (
         env.current_raw_state.copy()
     )
 
-    # --------------------------------------------------------
-    # Load trained PPO policy
-    # --------------------------------------------------------
-
     ppo_model = PPO.load(
         model_path
     )
-
-    # --------------------------------------------------------
-    # Run sequential multi-quarter PPO rollout
-    # --------------------------------------------------------
 
     trajectory = []
 
@@ -359,13 +446,16 @@ def simulate_strategy(
         not terminated
         and not truncated
     ):
+
         state_before = (
             env.current_raw_state.copy()
         )
 
-        action, _ = ppo_model.predict(
-            env.current_obs,
-            deterministic=True,
+        action, _ = (
+            ppo_model.predict(
+                env.current_obs,
+                deterministic=True,
+            )
         )
 
         action_id = int(
@@ -375,7 +465,9 @@ def simulate_strategy(
         )
 
         action_match = action_df[
-            action_df["action_id"]
+            action_df[
+                "action_id"
+            ]
             == action_id
         ]
 
@@ -538,10 +630,6 @@ def simulate_strategy(
             }
         )
 
-    # --------------------------------------------------------
-    # Final state and summary
-    # --------------------------------------------------------
-
     final_state = (
         env.current_raw_state.copy()
     )
@@ -698,22 +786,21 @@ def simulate_strategy(
                 ),
         },
 
-        "method":
-            (
-                "Four-quarter sequential PPO rollout using "
-                "the finalized Chapter 6 real-distress "
-                "SMBGym environment."
-            ),
+        "method": (
+            "Four-quarter sequential PPO rollout using "
+            "the finalized Chapter 6 real-distress "
+            "SMBGym environment with the original "
+            "training normalization statistics."
+        ),
 
-        "interpretation_note":
-            (
-                "The trajectory is generated by the Chapter 6 "
-                "simulated financial environment using modeled "
-                "transition assumptions and stochastic variation. "
-                "It is scenario-based decision support and should "
-                "not be interpreted as a guaranteed forecast of "
-                "real-world financial outcomes."
-            ),
+        "interpretation_note": (
+            "The trajectory is generated by the Chapter 6 "
+            "simulated financial environment using modeled "
+            "transition assumptions and stochastic variation. "
+            "It is scenario-based decision support and should "
+            "not be interpreted as a guaranteed forecast of "
+            "real-world financial outcomes."
+        ),
 
         "rollout_status":
             "connected",

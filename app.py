@@ -1,5 +1,7 @@
 import os
 
+from pathlib import Path
+
 import joblib
 import pandas as pd
 import streamlit as st
@@ -107,12 +109,12 @@ st.html(
 # PROJECT CONFIGURATION
 # ============================================================
 
-THESIS_ROOT = (
-    "/Users/humairaali/"
-    "Revised_AI_CFO_Thesis"
-)
+REPO_ROOT = Path(__file__).resolve().parent
 
-os.environ["AI_CFO_THESIS_ROOT"] = THESIS_ROOT
+ARTIFACT_ROOT = (
+    REPO_ROOT
+    / "deployment_artifacts"
+)
 
 
 # ============================================================
@@ -131,9 +133,9 @@ DEFAULT_PERIOD = "2021-12-31"
 def load_distress_model():
 
     model_path = (
-        f"{THESIS_ROOT}/"
-        "models/"
-        "xgb_distress_h1.joblib"
+        ARTIFACT_ROOT
+        / "models"
+        / "xgb_distress_h1.joblib"
     )
 
     return joblib.load(
@@ -145,29 +147,22 @@ def load_distress_model():
 def load_chapter3_panel():
 
     panel_path = (
-        f"{THESIS_ROOT}/"
-        "data/processed/"
-        "chapter3_model_panel_final_v1.parquet"
+        ARTIFACT_ROOT
+        / "data"
+        / "chapter3_deployment_panel.parquet"
     )
 
     panel = pd.read_parquet(
         panel_path
     )
 
-    # Recreate Chapter 3 SIC encoding
-    panel["sic"] = (
-        panel["sic"]
-        .astype(str)
-    )
-
-    panel["sic_code"] = (
-        pd.factorize(
-            panel["sic"]
-        )[0]
-    )
-
     panel["period"] = pd.to_datetime(
         panel["period"]
+    )
+
+    panel["cik"] = (
+        panel["cik"]
+        .astype(str)
     )
 
     return panel
@@ -177,9 +172,9 @@ def load_chapter3_panel():
 def load_chapter4_recommendations():
 
     recommendation_path = (
-        f"{THESIS_ROOT}/"
-        "results/tables/chapter4/"
-        "chapter4_final_recommendations.csv"
+        ARTIFACT_ROOT
+        / "tables"
+        / "chapter4_recommendations.csv"
     )
 
     recommendations = pd.read_csv(
@@ -1744,5 +1739,4 @@ st.caption(
     "within their respective model assumptions. "
     "Simulation outputs are scenario-based modeled outcomes, "
     "not guaranteed business results or financial advice."
-)  
-     
+)
