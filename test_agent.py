@@ -15,7 +15,7 @@ os.environ["AI_CFO_THESIS_ROOT"] = (
 
 
 # ------------------------------------------------------------
-# 2. Load the real Chapter 3 modeling panel
+# 2. Load the Chapter 3 modeling panel
 # ------------------------------------------------------------
 
 panel_path = (
@@ -40,8 +40,7 @@ panel_df["sic_code"] = pd.factorize(
 
 
 # ------------------------------------------------------------
-# 4. Load the real Chapter 3 distress model
-#    so we can use its exact feature order
+# 4. Load the Chapter 3 distress model
 # ------------------------------------------------------------
 
 model_path = (
@@ -59,22 +58,49 @@ model_feature_names = list(
 
 
 # ------------------------------------------------------------
-# 5. Select a real distressed company-quarter
+# 5. Select a company-quarter that exists in both
+#    Chapter 3 and Chapter 4
 # ------------------------------------------------------------
 
-sample_row = panel_df[
-    panel_df["target_distress_h1"] == 1
-].iloc[0]
+sample_match = panel_df[
+    (panel_df["cik"].astype(str) == "1000045")
+    & (
+        pd.to_datetime(panel_df["period"])
+        == pd.Timestamp("2021-03-31")
+    )
+]
+
+if sample_match.empty:
+    raise ValueError(
+        "Nicholas Financial 2021-03-31 was not found "
+        "in the Chapter 3 modeling panel."
+    )
+
+sample_row = sample_match.iloc[0]
 
 
 # ------------------------------------------------------------
-# 6. Build the company input expected by the AI CFO
+# 6. Build the company input
+#
+#    The 88 model features are used by Chapter 3.
+#    CIK and period are included so Chapter 4 can locate the
+#    corresponding governance-aware recommendation record.
 # ------------------------------------------------------------
 
 company_data = {
     feature: sample_row[feature]
     for feature in model_feature_names
 }
+
+company_data["cik"] = str(
+    sample_row["cik"]
+)
+
+company_data["period"] = (
+    pd.to_datetime(
+        sample_row["period"]
+    ).strftime("%Y-%m-%d")
+)
 
 
 # ------------------------------------------------------------
@@ -87,27 +113,32 @@ result = run_cfo_analysis(
 
 
 # ------------------------------------------------------------
-# 8. Display the test case and results
+# 8. Display integration results
 # ------------------------------------------------------------
 
 print("=" * 70)
-print("AI CFO INTEGRATION TEST")
+print("AI CFO CHAPTER 3 + CHAPTER 4 INTEGRATION TEST")
 print("=" * 70)
 
 print("\nCompany:")
 print(sample_row["company_name"])
 
-print("\nYear / Quarter:")
-print(
-    int(sample_row["year"]),
-    "/",
-    int(sample_row["quarter"])
-)
+print("\nPeriod:")
+print(company_data["period"])
 
 print("\nActual next-quarter distress:")
 print(
     int(sample_row["target_distress_h1"])
 )
 
-print("\nAI CFO results:")
-print(result)
+print("\nFORECAST RESULT:")
+print(result["forecast"])
+
+print("\nRECOMMENDATION RESULT:")
+print(result["recommendations"])
+
+print("\nEXPLAINABILITY RESULT:")
+print(result["explanation"])
+
+print("\nSIMULATION RESULT:")
+print(result["simulation"])
