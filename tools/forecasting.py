@@ -52,7 +52,17 @@ def predict_financial_distress(company_features: dict) -> dict:
     model = joblib.load(model_path)
 
     registry_df = pd.read_csv(feature_registry_path)
-    feature_names = registry_df["feature"].tolist()
+registry_features = registry_df["feature"].tolist()
+
+# Use the exact feature order stored in the trained XGBoost model.
+feature_names = list(model.feature_names_in_)
+
+# Safety check: the saved registry and trained model should contain
+# the same 88 predictors, even though the registry was saved alphabetically.
+if set(feature_names) != set(registry_features):
+    raise ValueError(
+        "Feature registry does not match the features stored in the trained model."
+    )
 
     missing_features = [
         feature
