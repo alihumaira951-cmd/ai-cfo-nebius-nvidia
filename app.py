@@ -535,6 +535,126 @@ st.caption(
     f"• CIK {selected_cik}"
 )
 
+
+# ============================================================
+# EXECUTIVE SNAPSHOT
+# ============================================================
+
+distress = forecast.get(
+    "financial_distress",
+    {},
+)
+
+distress_probability = distress.get(
+    "distress_probability"
+)
+
+strategic_regime = (
+    recommendations.get(
+        "strategic_regime",
+        "Unavailable",
+    )
+)
+
+recommendation_list = (
+    recommendations.get(
+        "recommendations",
+        [],
+    )
+)
+
+top_action = (
+    recommendation_list[0].get(
+        "action",
+        "Unavailable",
+    )
+    if recommendation_list
+    else "Unavailable"
+)
+
+simulation_interpretation = (
+    executive_brief.get(
+        "simulation_interpretation",
+        {},
+    )
+)
+
+scenario_outcome = (
+    simulation_interpretation.get(
+        "outcome"
+    )
+)
+
+if scenario_outcome == "improving":
+
+    scenario_label = (
+        "Improving"
+    )
+
+elif scenario_outcome == "deteriorating":
+
+    scenario_label = (
+        "Deteriorating"
+    )
+
+elif scenario_outcome == "mixed":
+
+    scenario_label = (
+        "Mixed Outcome"
+    )
+
+else:
+
+    scenario_label = (
+        "See Simulation"
+    )
+
+
+st.markdown(
+    "### Executive Snapshot"
+)
+
+snapshot_col1, snapshot_col2, snapshot_col3, snapshot_col4 = (
+    st.columns(4)
+)
+
+with snapshot_col1:
+
+    if distress_probability is not None:
+
+        st.metric(
+            "Distress Risk",
+            f"{distress_probability:.2%}",
+        )
+
+    else:
+
+        st.metric(
+            "Distress Risk",
+            "Unavailable",
+        )
+
+with snapshot_col2:
+
+    st.metric(
+        "Strategic Regime",
+        strategic_regime,
+    )
+
+with snapshot_col3:
+
+    st.metric(
+        "Top Recommendation",
+        top_action,
+    )
+
+with snapshot_col4:
+
+    st.metric(
+        "Scenario Assessment",
+        scenario_label,
+    )
+
 st.divider()
 
 
@@ -548,15 +668,6 @@ st.html(
 
 st.subheader(
     "Financial Risk Outlook"
-)
-
-distress = forecast.get(
-    "financial_distress",
-    {},
-)
-
-distress_probability = distress.get(
-    "distress_probability"
 )
 
 distress_threshold = distress.get(
@@ -1155,5 +1266,5 @@ st.caption(
     "recommendations, and PPO simulations should be interpreted "
     "within their respective model assumptions. Simulated outcomes "
     "are scenarios, not guaranteed business results."
-)
-    
+)    
+                     
