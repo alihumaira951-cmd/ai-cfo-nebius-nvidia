@@ -1,4 +1,5 @@
-import os
+from pathlib import Path
+
 import joblib
 import pandas as pd
 
@@ -6,51 +7,45 @@ from agent.cfo_agent import run_cfo_analysis
 
 
 # ------------------------------------------------------------
-# 1. Point the hackathon app to the local thesis project
+# 1. Locate deployment artifacts inside the repository
 # ------------------------------------------------------------
 
-os.environ["AI_CFO_THESIS_ROOT"] = (
-    "/Users/humairaali/Revised_AI_CFO_Thesis"
+REPO_ROOT = Path(__file__).resolve().parent
+
+DEPLOY_ROOT = (
+    REPO_ROOT
+    / "deployment_artifacts"
 )
-
-
-# ------------------------------------------------------------
-# 2. Load the Chapter 3 modeling panel
-# ------------------------------------------------------------
 
 panel_path = (
-    "/Users/humairaali/"
-    "Revised_AI_CFO_Thesis/"
-    "data/processed/"
-    "chapter3_model_panel_final_v1.parquet"
+    DEPLOY_ROOT
+    / "data"
+    / "chapter3_deployment_panel.parquet"
 )
-
-panel_df = pd.read_parquet(panel_path)
-
-
-# ------------------------------------------------------------
-# 3. Recreate sic_code exactly as Chapter 3 did
-# ------------------------------------------------------------
-
-panel_df["sic"] = panel_df["sic"].astype(str)
-
-panel_df["sic_code"] = pd.factorize(
-    panel_df["sic"]
-)[0]
-
-
-# ------------------------------------------------------------
-# 4. Load the Chapter 3 distress model
-# ------------------------------------------------------------
 
 model_path = (
-    "/Users/humairaali/"
-    "Revised_AI_CFO_Thesis/"
-    "models/"
-    "xgb_distress_h1.joblib"
+    DEPLOY_ROOT
+    / "models"
+    / "xgb_distress_h1.joblib"
 )
 
-model = joblib.load(model_path)
+
+# ------------------------------------------------------------
+# 2. Load deployment Chapter 3 panel
+# ------------------------------------------------------------
+
+panel_df = pd.read_parquet(
+    panel_path
+)
+
+
+# ------------------------------------------------------------
+# 3. Load Chapter 3 distress model
+# ------------------------------------------------------------
+
+model = joblib.load(
+    model_path
+)
 
 model_feature_names = list(
     model.feature_names_in_
@@ -58,48 +53,67 @@ model_feature_names = list(
 
 
 # ------------------------------------------------------------
-# 5. Select Nicholas Financial test case
+# 4. Select Nicholas Financial test case
 # ------------------------------------------------------------
 
 sample_match = panel_df[
-    (panel_df["cik"].astype(str) == "1000045")
+    (
+        panel_df["cik"]
+        .astype(str)
+        == "1000045"
+    )
     & (
-        pd.to_datetime(panel_df["period"])
-        == pd.Timestamp("2021-03-31")
+        pd.to_datetime(
+            panel_df["period"]
+        )
+        == pd.Timestamp(
+            "2021-03-31"
+        )
     )
 ]
 
 if sample_match.empty:
     raise ValueError(
         "Nicholas Financial 2021-03-31 was not found "
-        "in the Chapter 3 modeling panel."
+        "in the deployment Chapter 3 panel."
     )
 
-sample_row = sample_match.iloc[0]
+sample_row = (
+    sample_match.iloc[0]
+)
 
 
 # ------------------------------------------------------------
-# 6. Build company input
+# 5. Build company input
 # ------------------------------------------------------------
 
 company_data = {
-    feature: sample_row[feature]
+    feature: sample_row[
+        feature
+    ]
     for feature in model_feature_names
 }
 
 company_data["cik"] = str(
-    sample_row["cik"]
+    sample_row[
+        "cik"
+    ]
 )
 
 company_data["period"] = (
     pd.to_datetime(
-        sample_row["period"]
-    ).strftime("%Y-%m-%d")
+        sample_row[
+            "period"
+        ]
+    )
+    .strftime(
+        "%Y-%m-%d"
+    )
 )
 
 
 # ------------------------------------------------------------
-# 7. Run complete AI CFO workflow
+# 6. Run complete AI CFO workflow
 # ------------------------------------------------------------
 
 result = run_cfo_analysis(
@@ -108,37 +122,87 @@ result = run_cfo_analysis(
 
 
 # ------------------------------------------------------------
-# 8. Display integration results
+# 7. Display integration results
 # ------------------------------------------------------------
 
-print("=" * 70)
-print("AI CFO FULL INTEGRATION TEST")
-print("=" * 70)
-
-print("\nCompany:")
-print(sample_row["company_name"])
-
-print("\nPeriod:")
-print(company_data["period"])
-
-print("\nActual next-quarter distress:")
 print(
-    int(sample_row["target_distress_h1"])
+    "=" * 70
 )
 
-print("\nFORECAST RESULT:")
-print(result["forecast"])
+print(
+    "AI CFO DEPLOYMENT INTEGRATION TEST"
+)
 
-print("\nRECOMMENDATION RESULT:")
-print(result["recommendations"])
+print(
+    "=" * 70
+)
 
-print("\nEXPLAINABILITY RESULT:")
-print(result["explanation"])
+print(
+    "\nCompany:"
+)
 
-print("\nSIMULATION RESULT:")
-print(result["simulation"])
+print(
+    sample_row[
+        "company_name"
+    ]
+)
 
-print("\nEXECUTIVE BRIEF:")
-print(result["executive_brief"])
-  
+print(
+    "\nPeriod:"
+)
 
+print(
+    company_data[
+        "period"
+    ]
+)
+
+print(
+    "\nFORECAST RESULT:"
+)
+
+print(
+    result[
+        "forecast"
+    ]
+)
+
+print(
+    "\nRECOMMENDATION RESULT:"
+)
+
+print(
+    result[
+        "recommendations"
+    ]
+)
+
+print(
+    "\nEXPLAINABILITY RESULT:"
+)
+
+print(
+    result[
+        "explanation"
+    ]
+)
+
+print(
+    "\nSIMULATION RESULT:"
+)
+
+print(
+    result[
+        "simulation"
+    ]
+)
+
+print(
+    "\nEXECUTIVE BRIEF:"
+)
+
+print(
+    result[
+        "executive_brief"
+    ]
+)
