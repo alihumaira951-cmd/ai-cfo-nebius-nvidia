@@ -655,6 +655,36 @@ if simulation.get(
         {},
     )
 
+    initial_profit_margin = sim_summary.get(
+        "initial_profit_margin",
+        0,
+    )
+
+    final_profit_margin = sim_summary.get(
+        "final_profit_margin",
+        0,
+    )
+
+    initial_cash_ratio = sim_summary.get(
+        "initial_cash_ratio",
+        0,
+    )
+
+    final_cash_ratio = sim_summary.get(
+        "final_cash_ratio",
+        0,
+    )
+
+    initial_distress_probability = sim_summary.get(
+        "initial_distress_probability",
+        0,
+    )
+
+    final_distress_probability = sim_summary.get(
+        "final_distress_probability",
+        0,
+    )
+
     sim_col1, sim_col2, sim_col3 = (
         st.columns(3)
     )
@@ -663,9 +693,10 @@ if simulation.get(
 
         st.metric(
             "Profit Margin",
-            f"{sim_summary.get('final_profit_margin', 0):.2%}",
-            delta=(
-                f"{sim_summary.get('final_profit_margin', 0) - sim_summary.get('initial_profit_margin', 0):.2%}"
+            (
+                f"{initial_profit_margin:.2%} "
+                f"→ "
+                f"{final_profit_margin:.2%}"
             ),
         )
 
@@ -673,9 +704,10 @@ if simulation.get(
 
         st.metric(
             "Cash Ratio",
-            f"{sim_summary.get('final_cash_ratio', 0):.3f}",
-            delta=(
-                f"{sim_summary.get('final_cash_ratio', 0) - sim_summary.get('initial_cash_ratio', 0):.3f}"
+            (
+                f"{initial_cash_ratio:.3f} "
+                f"→ "
+                f"{final_cash_ratio:.3f}"
             ),
         )
 
@@ -683,11 +715,17 @@ if simulation.get(
 
         st.metric(
             "Distress Probability",
-            f"{sim_summary.get('final_distress_probability', 0):.2%}",
-            delta=(
-                f"{sim_summary.get('final_distress_probability', 0) - sim_summary.get('initial_distress_probability', 0):.2%}"
+            (
+                f"{initial_distress_probability:.3%} "
+                f"→ "
+                f"{final_distress_probability:.3%}"
             ),
         )
+
+    st.caption(
+        "Starting financial state → simulated position "
+        "after four quarters."
+    )
 
     trajectory_df = pd.DataFrame(
         simulation[
@@ -895,3 +933,6 @@ st.caption(
     "within their respective model assumptions. Simulated outcomes "
     "are scenarios, not guaranteed business results."
 )
+   
+
+  
