@@ -855,6 +855,13 @@ else:
         )
     )
 
+    simulation_interpretation = (
+        executive_brief.get(
+            "simulation_interpretation",
+            {},
+        )
+    )
+
     st.markdown(
         "#### Risk Outlook"
     )
@@ -909,8 +916,59 @@ else:
             "while the cash ratio moves from "
             f"**{local_simulation.get('initial_cash_ratio', 0):.3f}** "
             "to "
-            f"**{local_simulation.get('final_cash_ratio', 0):.3f}**."
+            f"**{local_simulation.get('final_cash_ratio', 0):.3f}** "
+            "and modeled distress moves from "
+            f"**{local_simulation.get('initial_distress_probability', 0):.2%}** "
+            "to "
+            f"**{local_simulation.get('final_distress_probability', 0):.2%}**."
         )
+
+    if simulation_interpretation:
+
+        st.markdown(
+            "#### Executive Interpretation"
+        )
+
+        simulation_outcome = (
+            simulation_interpretation.get(
+                "outcome",
+                "mixed",
+            )
+        )
+
+        simulation_message = (
+            simulation_interpretation.get(
+                "message",
+                "",
+            )
+        )
+
+        if simulation_outcome == "improving":
+
+            st.success(
+                f"**Scenario assessment: Improving**\n\n"
+                f"{simulation_message}"
+            )
+
+        elif simulation_outcome == "deteriorating":
+
+            st.error(
+                f"**Scenario assessment: Deteriorating**\n\n"
+                f"{simulation_message}"
+            )
+
+        elif simulation_outcome == "mixed":
+
+            st.warning(
+                f"**Scenario assessment: Mixed Outcome**\n\n"
+                f"{simulation_message}"
+            )
+
+        else:
+
+            st.info(
+                simulation_message
+            )
 
     st.caption(
         executive_brief.get(
@@ -933,6 +991,17 @@ st.caption(
     "within their respective model assumptions. Simulated outcomes "
     "are scenarios, not guaranteed business results."
 )
+ 
+
+
+
+  
+   
+   
+
+ 
+
+  
    
 
   
