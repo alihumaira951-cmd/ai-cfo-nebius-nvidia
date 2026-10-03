@@ -6,7 +6,7 @@ from agent.cfo_agent import run_cfo_analysis
 
 
 # ------------------------------------------------------------
-# 1. Point the hackathon app to your local thesis project
+# 1. Point the hackathon app to the local thesis project
 # ------------------------------------------------------------
 
 os.environ["AI_CFO_THESIS_ROOT"] = (
@@ -58,8 +58,7 @@ model_feature_names = list(
 
 
 # ------------------------------------------------------------
-# 5. Select a company-quarter that exists in both
-#    Chapter 3 and Chapter 4
+# 5. Select Nicholas Financial test case
 # ------------------------------------------------------------
 
 sample_match = panel_df[
@@ -80,11 +79,7 @@ sample_row = sample_match.iloc[0]
 
 
 # ------------------------------------------------------------
-# 6. Build the company input
-#
-#    The 88 model features are used by Chapter 3.
-#    CIK and period are included so Chapter 4 can locate the
-#    corresponding governance-aware recommendation record.
+# 6. Build company input
 # ------------------------------------------------------------
 
 company_data = {
@@ -104,7 +99,7 @@ company_data["period"] = (
 
 
 # ------------------------------------------------------------
-# 7. Run the AI CFO orchestration layer
+# 7. Run complete AI CFO workflow
 # ------------------------------------------------------------
 
 result = run_cfo_analysis(
@@ -117,7 +112,7 @@ result = run_cfo_analysis(
 # ------------------------------------------------------------
 
 print("=" * 70)
-print("AI CFO CHAPTER 3 + CHAPTER 4 INTEGRATION TEST")
+print("AI CFO FULL INTEGRATION TEST")
 print("=" * 70)
 
 print("\nCompany:")
@@ -142,3 +137,8 @@ print(result["explanation"])
 
 print("\nSIMULATION RESULT:")
 print(result["simulation"])
+
+print("\nEXECUTIVE BRIEF:")
+print(result["executive_brief"])
+  
+
