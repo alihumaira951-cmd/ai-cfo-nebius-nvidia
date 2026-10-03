@@ -23,7 +23,7 @@ st.set_page_config(
 # VISUAL STYLING
 # ============================================================
 
-st.markdown(
+st.html(
     """
     <style>
 
@@ -78,13 +78,6 @@ st.markdown(
         margin-bottom: 0.2rem;
     }
 
-    .company-card {
-        padding: 1rem 1.25rem;
-        border-radius: 14px;
-        border: 1px solid rgba(120, 120, 120, 0.2);
-        margin-bottom: 1rem;
-    }
-
     div[data-testid="stMetric"] {
         border: 1px solid rgba(120, 120, 120, 0.18);
         border-radius: 14px;
@@ -105,8 +98,7 @@ st.markdown(
     }
 
     </style>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 
@@ -217,10 +209,12 @@ model_features = list(
 # HERO HEADER
 # ============================================================
 
-st.markdown(
+st.html(
     """
     <div class="hero-card">
-        <div class="hero-title">AI CFO</div>
+        <div class="hero-title">
+            AI CFO
+        </div>
 
         <div class="hero-subtitle">
             Explainable Agentic Decision Intelligence
@@ -231,8 +225,7 @@ st.markdown(
             Predict → Recommend → Explain → Simulate → Decide
         </div>
     </div>
-    """,
-    unsafe_allow_html=True,
+    """
 )
 
 st.caption(
@@ -529,9 +522,8 @@ executive_brief = result[
 # COMPANY HEADER
 # ============================================================
 
-st.markdown(
-    '<div class="section-kicker">Company Analysis</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Company Analysis</div>'
 )
 
 st.header(
@@ -550,9 +542,8 @@ st.divider()
 # CHAPTER 3 — RISK OUTLOOK
 # ============================================================
 
-st.markdown(
-    '<div class="section-kicker">Chapter 3 · Predict</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Chapter 3 · Predict</div>'
 )
 
 st.subheader(
@@ -618,9 +609,8 @@ with risk_col3:
 
 st.divider()
 
-st.markdown(
-    '<div class="section-kicker">Chapter 4 · Recommend</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Chapter 4 · Recommend</div>'
 )
 
 st.subheader(
@@ -693,9 +683,8 @@ else:
 
 st.divider()
 
-st.markdown(
-    '<div class="section-kicker">Chapter 5 · Explain</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Chapter 5 · Explain</div>'
 )
 
 st.subheader(
@@ -785,9 +774,8 @@ else:
 
 st.divider()
 
-st.markdown(
-    '<div class="section-kicker">Chapter 6 · Simulate</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Chapter 6 · Simulate</div>'
 )
 
 st.subheader(
@@ -973,9 +961,8 @@ else:
 
 st.divider()
 
-st.markdown(
-    '<div class="section-kicker">Executive Decision Support</div>',
-    unsafe_allow_html=True,
+st.html(
+    '<div class="section-kicker">Executive Decision Support</div>'
 )
 
 st.subheader(
@@ -1169,7 +1156,4 @@ st.caption(
     "within their respective model assumptions. Simulated outcomes "
     "are scenarios, not guaranteed business results."
 )
-
-   
-    
-
+       
