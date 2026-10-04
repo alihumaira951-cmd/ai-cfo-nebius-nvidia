@@ -106,6 +106,40 @@ The simulation represents **scenario-based decision support** based on modeled t
 
 ---
 
+## Forward Validation
+
+The hackathon implementation includes a dedicated **Forward Validation** workflow that evaluates the frozen research pipeline on later, post-training financial states.
+
+### Technical Communications Corporation case study
+
+- **Input state:** March 31, 2022
+- **Next-quarter distress probability:** 94.39%
+- **Observed next quarter:** June 30, 2022
+- **Observed distress outcome:** Distress criteria met
+- **Financial Health Score:** 0.230
+- **Strategic Regime:** Defensive
+- **Top recommendation:** Reduce Operating Expenses
+- **Chapter 5 surrogate probability:** 64.30%
+
+The trained PPO policy was also initialized from the newly constructed March 2022 Chapter 6 state for a four-quarter scenario simulation.
+
+In that modeled scenario:
+
+- Profit margin moved from **-21.72% to 11.67%**
+- Cash ratio moved from **0.080 to 0.804**
+- Distress probability remained elevated at approximately **94.68%**
+
+The simulation is interpreted as a **mixed scenario**, not as a guaranteed real-world outcome.
+
+### Walk-forward evidence
+
+Across five consecutive next-quarter observations for Technical Communications Corporation, the frozen distress classifier correctly classified **4 of 5 outcomes (80%)**.
+
+This is an illustrative company-level, out-of-time case study and should not be interpreted as general model accuracy or as validation of the recommendation and simulation outputs.
+
+Use the **Forward Validation** page in the Streamlit sidebar to view the live case study.
+
+
 ## Executive Decision Layer
 
 The final layer brings together evidence from prediction, recommendation, explainability, and simulation.
