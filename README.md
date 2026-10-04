@@ -1,53 +1,147 @@
 # AI CFO
 
-AI CFO is an explainable agentic decision-support system for financial management.
+### Explainable Agentic Decision Intelligence for Financial Management
 
-The project combines predictive financial modeling, governance-aware recommendations, explainability, causal analysis, and reinforcement-learning-based scenario simulation.
+**Predict → Recommend → Explain → Simulate → Decide**
 
-For the Nebius x NVIDIA Global AI Hackathon, AI CFO is being extended with an agentic orchestration layer powered by NVIDIA Nemotron through Nebius Token Factory.
+🌐 **Live Demo:**  
+https://ai-cfo-nebius-nvidia-jwxcnw4gu9yjze5uxjnwmx.streamlit.app/
 
-## Current Research Foundation
+---
 
-The existing AI CFO research framework includes:
+## Overview
 
-- XGBoost and LightGBM predictive models
-- Revenue, operating cash flow, EBITDA, and financial distress forecasting
-- Governance-aware executive recommendations
-- SHAP-based explainability
-- Causal KPI analysis using DoWhy
-- Gymnasium-based financial simulation
-- PPO reinforcement learning using Stable-Baselines3
+AI CFO is an explainable decision-intelligence system designed to help move financial AI beyond prediction alone.
 
-## Hackathon Extension
+Traditional financial models can estimate what may happen. AI CFO extends that workflow by connecting financial distress prediction with strategic recommendations, explainable AI, multi-quarter reinforcement-learning simulation, and executive decision support.
 
-During the Nebius x NVIDIA Global AI Hackathon, the project is being extended to include:
+The system combines several analytical layers into one decision pipeline:
 
-- NVIDIA Nemotron as the reasoning and orchestration layer
-- Nebius Token Factory for model inference
-- Tool calling between the AI agent and existing Python models
-- An interactive executive-facing AI CFO interface
-- Explainable decision briefs combining prediction, recommendation, and simulation
+1. **Predict** financial distress risk.
+2. **Recommend** governance-aware strategic actions.
+3. **Explain** why a recommendation was generated.
+4. **Simulate** the potential trajectory of the strategy across multiple quarters.
+5. **Decide** by synthesizing the evidence into an executive-level decision brief.
 
-## Technology
+---
 
-- Python
-- XGBoost
-- LightGBM
-- scikit-learn
-- pandas
-- NumPy
-- SHAP
-- DoWhy
-- Gymnasium
-- Stable-Baselines3
-- PyTorch
-- NVIDIA Nemotron
-- Nebius Token Factory
+## Why AI CFO?
 
-## Status
+Financial decision-makers rarely need only a probability.
 
-Work in progress for the Nebius x NVIDIA Global AI Hackathon.
+They need to understand:
 
-## License
+- What risk is emerging?
+- What should we do about it?
+- Why is that action being recommended?
+- What could happen if we follow that strategy?
+- What tradeoffs or governance concerns should management consider?
 
-MIT
+AI CFO brings these questions into one integrated workflow.
+
+---
+
+## System Architecture
+
+### Chapter 3 — Predict
+
+An XGBoost financial-distress model estimates next-quarter financial distress probability.
+
+The prediction layer produces:
+
+- Financial distress probability
+- Distress classification
+- Decision threshold
+- Model feature information
+
+---
+
+### Chapter 4 — Recommend
+
+The recommendation layer converts the company's financial condition into a strategic regime and ranks candidate management actions.
+
+Examples include:
+
+- Refinance Debt
+- Improve Working Capital Efficiency
+- Reduce Operating Expenses
+- Increase Cash Reserves
+- Delay Capital Expenditures
+- Hold Strategy
+
+Recommendations incorporate financial health, distress risk, and governance-aware scoring.
+
+---
+
+### Chapter 5 — Explain
+
+SHAP-based surrogate models explain the factors influencing the recommended action.
+
+The explainability layer identifies:
+
+- Important recommendation drivers
+- Direction of model contribution
+- Financial health effects
+- Distress-risk effects
+- Strategic-regime effects
+
+SHAP values are treated as **predictive explanations**, not causal effects.
+
+---
+
+### Chapter 6 — Simulate
+
+A PPO reinforcement-learning policy operates within a custom SMBGym financial environment.
+
+The simulation evaluates a strategy across four modeled quarters and tracks outcomes such as:
+
+- Profit margin
+- Cash ratio
+- Current ratio
+- Debt ratio
+- Revenue growth
+- Financial distress probability
+
+The simulation represents **scenario-based decision support** based on modeled transition assumptions. It should not be interpreted as a guaranteed real-world financial forecast.
+
+---
+
+## Executive Decision Layer
+
+The final layer brings together evidence from prediction, recommendation, explainability, and simulation.
+
+The executive interface is designed to distinguish between:
+
+- Predictive model outputs
+- Recommendation scores
+- SHAP explanations
+- Simulated scenarios
+- Executive interpretation
+
+This separation is important because AI CFO is intended to support human decision-making rather than hide analytical uncertainty behind a single automated answer.
+
+---
+
+## NVIDIA Nemotron + Nebius Integration
+
+AI CFO contains an executive reasoning layer designed to use **NVIDIA Nemotron through Nebius Token Factory**.
+
+The reasoning layer receives structured evidence produced by the underlying financial tools and is instructed to:
+
+- Use only evidence generated by the analytical pipeline
+- Avoid inventing financial values
+- Distinguish prediction from simulation
+- Avoid treating SHAP explanations as causal evidence
+- Highlight mixed or conflicting outcomes
+- Communicate uncertainty and governance considerations
+
+### Current public demo status
+
+The public Streamlit deployment currently operates in **local fallback mode** because live Nebius credentials have not yet been configured.
+
+The application explicitly displays this status and does **not** claim that live Nemotron inference is occurring when credentials are unavailable.
+
+The Nemotron/Nebius service integration is contained in:
+
+```text
+services/nebius.py
