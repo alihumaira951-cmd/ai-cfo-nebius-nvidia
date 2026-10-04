@@ -5,7 +5,7 @@
 **Predict → Recommend → Explain → Simulate → Decide**
 
 🌐 **Live Demo:**  
-https://ai-cfo-nebius-nvidia-jwxcnw4gu9yjze5uxjnwmx.streamlit.app/
+(https://ai-cfo-nebius-nvidia-bgkhxcxxkfcu2qucsmwbgw.streamlit.app/)
 
 ---
 
