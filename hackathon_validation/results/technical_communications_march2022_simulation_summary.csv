@@ -1,0 +1,2 @@
+company,input_period,simulation_horizon_quarters,initial_profit_margin,final_profit_margin,initial_cash_ratio,final_cash_ratio,initial_current_ratio,final_current_ratio,initial_debt_ratio,final_debt_ratio,initial_distress_probability,final_distress_probability,ppo_action_ids
+Technical Communications Corporation,2022-03-31,4,-0.2171967897960767,0.11671456056096732,0.08031697252818165,0.804361383912823,0.888546114669762,0.9240301500837225,0.6697506401056301,0.7190969095140091,0.9439218640327454,0.9467726355271869,"96,96,96,96"

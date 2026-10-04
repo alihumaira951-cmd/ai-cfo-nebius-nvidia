@@ -1,0 +1,2 @@
+company,input_period,forecast_horizon,forecast_revenue,forecast_ocf,forecast_ebitda,distress_probability,financial_health_score,strategic_regime,recommendation_1,recommendation_1_score,recommendation_2,recommendation_2_score,recommendation_3,recommendation_3_score,xai_surrogate_probability
+Technical Communications Corporation,2022-03-31,next quarter,2488670.5,-1378583.75,-1308548.25,0.9439218640327454,0.22953621683038702,Defensive,Reduce Operating Expenses,0.940073222642109,Refinance Debt,0.9380799510627469,Reduce Debt Exposure,0.9262237690597229,0.6429605259549664
