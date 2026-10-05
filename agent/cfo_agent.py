@@ -4,7 +4,7 @@ from tools.explainability import explain_prediction
 from tools.simulation import simulate_strategy
 
 from services.nebius import (
-    nebius_available,
+    live_nemotron_available,
     generate_nebius_response,
 )
 
@@ -36,6 +36,11 @@ def _build_executive_prompt(
             "and simulated PPO scenario outcomes. "
             "Do not present simulated improvements as guaranteed "
             "real-world outcomes. "
+            "Do not invent management targets, percentages, dollar "
+            "amounts, deadlines, thresholds, financing terms, or "
+            "operational assumptions that were not supplied by the "
+            "AI CFO tools. If a specific target is not provided, "
+            "describe the action qualitatively instead. "
             "Explicitly identify tradeoffs or mixed outcomes. "
             "For example, if profitability or liquidity improves "
             "while distress probability remains elevated or worsens, "
@@ -398,7 +403,7 @@ def run_cfo_analysis(
     # Nemotron executive reasoning layer
     # --------------------------------------------------------
 
-    if nebius_available():
+    if live_nemotron_available():
 
         messages = _build_executive_prompt(
             company_data=company_data,

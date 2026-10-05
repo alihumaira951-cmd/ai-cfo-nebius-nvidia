@@ -430,7 +430,20 @@ if os.environ.get(
 ):
 
     st.sidebar.success(
-        "Nemotron executive layer: Connected"
+        "Nemotron executive layer: Live via Nebius Token Factory"
+    )
+
+elif os.environ.get(
+    "NVIDIA_API_KEY"
+):
+
+    st.sidebar.success(
+        "Nemotron executive layer: Live via NVIDIA API"
+    )
+
+    st.sidebar.caption(
+        "Direct NVIDIA Nemotron endpoint is active. "
+        "Nebius Token Factory access remains pending."
     )
 
 else:
@@ -440,8 +453,7 @@ else:
     )
 
     st.sidebar.caption(
-        "Nebius credentials have not been configured. "
-        "No live Nemotron claim is made."
+        "No live Nemotron credentials are configured."
     )
 
 
