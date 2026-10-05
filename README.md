@@ -139,6 +139,61 @@ This is an illustrative company-level, out-of-time case study and should not be 
 
 Use the **Forward Validation** page in the Streamlit sidebar to view the live case study.
 
+---
+
+## New Company Analysis
+
+The hackathon implementation now includes a business-facing **New Company Analysis** workflow.
+
+Instead of requiring users to construct the full model feature vector manually, users enter familiar company financial information such as:
+
+- Revenue and expenses
+- Net income
+- Operating cash flow
+- Cash and working-capital accounts
+- Assets and liabilities
+- Debt and equity
+- Shares outstanding
+- SIC industry code
+- Prior-quarter revenue, assets, and cash
+
+AI CFO then automatically:
+
+1. Derives financial ratios and growth measures.
+2. Maps the company's SIC to the model industry encoding.
+3. Adds the quarter-specific macroeconomic and market state.
+4. Constructs the Chapter 3 model input.
+5. Estimates next-quarter distress risk.
+6. Produces Chapter 4 forecasts and strategic recommendations.
+7. Explains the top recommendation using the Chapter 5 surrogate model and SHAP.
+8. Constructs the 24-variable Chapter 6 state.
+9. Runs the trained PPO policy through a four-quarter SMBGym scenario simulation.
+
+This turns the research pipeline into a workflow that a business user can interact with directly rather than requiring notebook or coding access.
+
+### Verified SEC Example — Axogen 2022 Q3
+
+The page includes a one-click **Load SEC Example: Axogen 2022 Q3** option using financial information reconstructed from Axogen's official SEC filings.
+
+For this case, AI CFO produces:
+
+- **Distress probability:** 0.58%
+- **Financial Health Score:** 0.392
+- **Strategic Regime:** Growth
+- **Top recommendation:** Improve Working Capital Efficiency
+- **Chapter 5 surrogate probability:** 96.66%
+- **Chapter 6 simulated distress:** approximately 0.58% to 0.61%
+
+The application also compares selected AI CFO forecasts with Axogen's subsequently reported standalone Q4 2022 results:
+
+| Metric | AI CFO Forecast | Actual SEC Q4 |
+| --- | ---: | ---: |
+| Revenue | $56.95M | $36.16M |
+| Operating Cash Flow | -$1.33M | $1.36M |
+
+The forecast misses are intentionally shown rather than hidden. This SEC example is an illustrative historical case study and should not be interpreted as general forecast-performance evidence.
+
+---
 
 ## Executive Decision Layer
 
@@ -179,3 +234,43 @@ The Nemotron/Nebius service integration is contained in:
 
 ```text
 services/nebius.py
+```
+
+---
+
+## Hackathon Contribution
+
+The underlying predictive, recommendation, explainability, and reinforcement-learning models originate from the AI CFO doctoral research project.
+
+The hackathon work focuses on turning those research components into an integrated, usable decision-intelligence product.
+
+Hackathon development includes:
+
+- Streamlit deployment
+- Historical decision dashboard
+- Multi-layer model orchestration
+- Out-of-time forward-validation workflow
+- Five-quarter walk-forward validation extension
+- New-company business input workflow
+- Automatic model feature construction
+- Verified SEC example workflow
+- Actual next-quarter SEC comparison
+- Chapter 5 explainability integration
+- Chapter 6 custom-state construction for new companies
+- PPO scenario-simulation integration
+- Nebius/Nemotron service layer
+- Executive decision-interface design
+
+## Important Interpretation Boundaries
+
+AI CFO is a research-based decision-support prototype.
+
+- Financial distress outputs are **model predictions**, not certainties.
+- Recommendation scores are **relative priorities**, not probabilities of success.
+- SHAP values explain predictive model behavior and are **not causal estimates**.
+- Reinforcement-learning trajectories are **simulated scenarios**, not guaranteed forecasts.
+- The Technical Communications walk-forward result is an **illustrative company-level case study**, not overall model accuracy.
+- The Axogen SEC comparison is a **historical example**, not general forecast-performance evidence.
+- Custom company analysis currently supports **2021–2022 reporting quarters** because those macroeconomic and market states are packaged with the deployed model.
+- The public deployment currently uses a **local executive-reasoning fallback** rather than live Nemotron inference.
+
