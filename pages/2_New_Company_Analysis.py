@@ -38,6 +38,57 @@ DISTRESS_THRESHOLD = 0.77
 
 
 # ============================================================
+# VERIFIED SEC EXAMPLE
+# ============================================================
+
+AXOGEN_SEC_EXAMPLE = {
+    "company_name": "AXOGEN, INC.",
+    "year": 2022,
+    "quarter": 3,
+
+    # Official standalone Q3 2022 SEC financial data
+    "revenue": 36_959_000.0,
+    "cogs": 6_176_000.0,
+    "gross_profit": 30_783_000.0,
+    "operating_expenses": 35_638_000.0,
+    "operating_income": -4_855_000.0,
+    "net_income": -4_318_000.0,
+    "operating_cash_flow": -689_000.0,
+    "capex": 4_370_000.0,
+    "rd_expense": 7_050_000.0,
+    "sga_expense": 28_588_000.0,
+
+    "cash": 14_318_000.0,
+    "accounts_receivable": 21_363_000.0,
+    "inventory": 19_116_000.0,
+    "current_assets": 102_454_000.0,
+    "total_assets": 195_520_000.0,
+    "equity": 101_445_000.0,
+    "accounts_payable": 22_017_000.0,
+    "current_liabilities": 23_547_000.0,
+    "total_liabilities": 94_075_000.0,
+    "total_debt": 45_487_000.0,
+    "shares_outstanding": 42_272_223.0,
+    "sic": 3845,
+
+    # Official Q2 2022 SEC values used for growth features
+    "previous_revenue": 34_454_000.0,
+    "previous_total_assets": 196_084_000.0,
+    "previous_cash": 11_822_000.0,
+
+    # Actual standalone Q4 2022 outcome for comparison
+    "actual_q4_revenue": 36_164_000.0,
+    "actual_q4_cogs": 6_141_000.0,
+    "actual_q4_gross_profit": 30_023_000.0,
+    "actual_q4_operating_expenses": 35_631_000.0,
+    "actual_q4_operating_income": -5_608_000.0,
+    "actual_q4_net_income": -5_415_000.0,
+    "actual_q4_operating_cash_flow": 1_362_000.0,
+    "actual_q4_capex": 6_622_000.0,
+}
+
+
+# ============================================================
 # LOAD DEPLOYMENT ARTIFACTS
 # ============================================================
 
@@ -170,6 +221,30 @@ st.info(
 # INPUT FORM
 # ============================================================
 
+if "load_axogen_sec_example" not in st.session_state:
+    st.session_state["load_axogen_sec_example"] = False
+
+
+if st.button(
+    "Load SEC Example: Axogen 2022 Q3",
+    use_container_width=True,
+):
+    st.session_state["load_axogen_sec_example"] = True
+
+    for key, value in AXOGEN_SEC_EXAMPLE.items():
+        if not key.startswith("actual_q4_"):
+            st.session_state[key] = value
+
+    st.rerun()
+
+
+if st.session_state.get("load_axogen_sec_example"):
+    st.success(
+        "Loaded verified Axogen 2022 Q3 SEC financial data. "
+        "You can review or edit any field before running the analysis."
+    )
+
+
 with st.form("company_input_form"):
 
     st.subheader("1. Company Information")
@@ -179,19 +254,26 @@ with st.form("company_input_form"):
     with col1:
         company_name = st.text_input(
             "Company name",
+            value=st.session_state.get("company_name", ""),
             placeholder="Example: ABC Manufacturing"
         )
 
     with col2:
         year = st.selectbox(
             "Reporting year",
-            [2021, 2022]
+            [2021, 2022],
+            index=[2021, 2022].index(
+                st.session_state.get("year", 2021)
+            )
         )
 
     with col3:
         quarter = st.selectbox(
             "Reporting quarter",
             [1, 2, 3, 4],
+            index=[1, 2, 3, 4].index(
+                st.session_state.get("quarter", 1)
+            ),
             format_func=lambda x: f"Q{x}"
         )
 
@@ -204,58 +286,68 @@ with st.form("company_input_form"):
     with col1:
         revenue = st.number_input(
             "Revenue ($)",
+            value=st.session_state.get("revenue", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         cogs = st.number_input(
             "Cost of goods sold ($)",
+            value=st.session_state.get("cogs", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         gross_profit = st.number_input(
             "Gross profit ($)",
+            value=st.session_state.get("gross_profit", 0),
             format="%.2f"
         )
 
     with col2:
         operating_expenses = st.number_input(
             "Operating expenses ($)",
+            value=st.session_state.get("operating_expenses", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         operating_income = st.number_input(
             "Operating income ($)",
+            value=st.session_state.get("operating_income", 0),
             format="%.2f"
         )
 
         net_income = st.number_input(
             "Net income ($)",
+            value=st.session_state.get("net_income", 0),
             format="%.2f"
         )
 
     with col3:
         operating_cash_flow = st.number_input(
             "Operating cash flow ($)",
+            value=st.session_state.get("operating_cash_flow", 0),
             format="%.2f"
         )
 
         capex = st.number_input(
             "Capital expenditures ($)",
+            value=st.session_state.get("capex", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         rd_expense = st.number_input(
             "R&D expense ($)",
+            value=st.session_state.get("rd_expense", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         sga_expense = st.number_input(
             "SG&A expense ($)",
+            value=st.session_state.get("sga_expense", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -269,18 +361,21 @@ with st.form("company_input_form"):
     with col1:
         cash = st.number_input(
             "Cash ($)",
+            value=st.session_state.get("cash", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         accounts_receivable = st.number_input(
             "Accounts receivable ($)",
+            value=st.session_state.get("accounts_receivable", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         inventory = st.number_input(
             "Inventory ($)",
+            value=st.session_state.get("inventory", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -288,42 +383,49 @@ with st.form("company_input_form"):
     with col2:
         current_assets = st.number_input(
             "Current assets ($)",
+            value=st.session_state.get("current_assets", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         total_assets = st.number_input(
             "Total assets ($)",
+            value=st.session_state.get("total_assets", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         equity = st.number_input(
             "Shareholders' equity ($)",
+            value=st.session_state.get("equity", 0),
             format="%.2f"
         )
 
     with col3:
         accounts_payable = st.number_input(
             "Accounts payable ($)",
+            value=st.session_state.get("accounts_payable", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         current_liabilities = st.number_input(
             "Current liabilities ($)",
+            value=st.session_state.get("current_liabilities", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         total_liabilities = st.number_input(
             "Total liabilities ($)",
+            value=st.session_state.get("total_liabilities", 0),
             min_value=0.0,
             format="%.2f"
         )
 
         total_debt = st.number_input(
             "Total debt ($)",
+            value=st.session_state.get("total_debt", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -337,6 +439,7 @@ with st.form("company_input_form"):
     with col1:
         shares_outstanding = st.number_input(
             "Shares outstanding",
+            value=st.session_state.get("shares_outstanding", 0),
             min_value=0.0,
             format="%.0f"
         )
@@ -344,6 +447,7 @@ with st.form("company_input_form"):
     with col2:
         sic = st.number_input(
             "SIC code",
+            value=st.session_state.get("sic", 0),
             min_value=0,
             max_value=9999,
             step=1,
@@ -363,6 +467,7 @@ with st.form("company_input_form"):
     with col1:
         previous_revenue = st.number_input(
             "Previous-quarter revenue ($)",
+            value=st.session_state.get("previous_revenue", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -370,6 +475,7 @@ with st.form("company_input_form"):
     with col2:
         previous_total_assets = st.number_input(
             "Previous-quarter total assets ($)",
+            value=st.session_state.get("previous_total_assets", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -377,6 +483,7 @@ with st.form("company_input_form"):
     with col3:
         previous_cash = st.number_input(
             "Previous-quarter cash ($)",
+            value=st.session_state.get("previous_cash", 0),
             min_value=0.0,
             format="%.2f"
         )
@@ -778,6 +885,126 @@ if submitted:
             st.caption(
                 f"Next-quarter revenue forecast: ${forecast_revenue:,.0f}"
             )
+
+            # ------------------------------------------------
+            # Verified SEC next-quarter comparison
+            # ------------------------------------------------
+
+            is_verified_axogen_example = (
+                company_name.strip().upper()
+                == AXOGEN_SEC_EXAMPLE["company_name"]
+                and year == AXOGEN_SEC_EXAMPLE["year"]
+                and quarter == AXOGEN_SEC_EXAMPLE["quarter"]
+                and np.isclose(
+                    revenue,
+                    AXOGEN_SEC_EXAMPLE["revenue"]
+                )
+                and np.isclose(
+                    operating_cash_flow,
+                    AXOGEN_SEC_EXAMPLE["operating_cash_flow"]
+                )
+                and np.isclose(
+                    total_assets,
+                    AXOGEN_SEC_EXAMPLE["total_assets"]
+                )
+                and int(sic) == AXOGEN_SEC_EXAMPLE["sic"]
+            )
+
+            if is_verified_axogen_example:
+
+                st.subheader(
+                    "SEC Actual Next-Quarter Comparison"
+                )
+
+                st.caption(
+                    "AI CFO uses Axogen's official 2022 Q3 SEC financial "
+                    "state as input. The comparison below shows the model's "
+                    "next-quarter forecasts alongside Axogen's subsequently "
+                    "reported standalone Q4 2022 results."
+                )
+
+                comparison_df = pd.DataFrame({
+                    "Metric": [
+                        "Revenue",
+                        "Operating Cash Flow",
+                    ],
+                    "AI CFO Forecast": [
+                        forecast_revenue,
+                        forecast_ocf,
+                    ],
+                    "Actual SEC Q4": [
+                        AXOGEN_SEC_EXAMPLE[
+                            "actual_q4_revenue"
+                        ],
+                        AXOGEN_SEC_EXAMPLE[
+                            "actual_q4_operating_cash_flow"
+                        ],
+                    ],
+                })
+
+                comparison_df["Forecast Error"] = (
+                    comparison_df["AI CFO Forecast"]
+                    - comparison_df["Actual SEC Q4"]
+                )
+
+                comparison_df["Absolute % Error"] = (
+                    (
+                        comparison_df["Forecast Error"].abs()
+                        / comparison_df[
+                            "Actual SEC Q4"
+                        ].abs()
+                    )
+                    * 100
+                )
+
+                formatted_comparison = (
+                    comparison_df.copy()
+                )
+
+                for col in [
+                    "AI CFO Forecast",
+                    "Actual SEC Q4",
+                    "Forecast Error",
+                ]:
+                    formatted_comparison[col] = (
+                        formatted_comparison[col]
+                        .map(
+                            lambda x: f"${x:,.0f}"
+                        )
+                    )
+
+                formatted_comparison[
+                    "Absolute % Error"
+                ] = (
+                    formatted_comparison[
+                        "Absolute % Error"
+                    ]
+                    .map(
+                        lambda x: f"{x:.1f}%"
+                    )
+                )
+
+                st.dataframe(
+                    formatted_comparison,
+                    width="stretch",
+                    hide_index=True,
+                )
+
+                st.markdown(
+                    "**Additional actual Q4 SEC outcomes:**  "
+                    f"Operating income: "
+                    f"${AXOGEN_SEC_EXAMPLE['actual_q4_operating_income']:,.0f}  |  "
+                    f"Net income: "
+                    f"${AXOGEN_SEC_EXAMPLE['actual_q4_net_income']:,.0f}  |  "
+                    f"Capital expenditures: "
+                    f"${AXOGEN_SEC_EXAMPLE['actual_q4_capex']:,.0f}"
+                )
+
+                st.caption(
+                    "The SEC comparison is an illustrative historical case study. "
+                    "Forecast errors are shown transparently and should not be "
+                    "interpreted as general model performance."
+                )
 
             st.subheader("Top Recommended Actions")
 
