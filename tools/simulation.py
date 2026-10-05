@@ -108,8 +108,71 @@ def _get_company_state(
 ):
     """
     Locate the requested company-quarter in the packaged
-    Chapter 6 company-state table.
+    Chapter 6 company-state table, or accept a validated
+    custom 24-variable Chapter 6 state.
     """
+
+    # --------------------------------------------------------
+    # Custom-company state
+    # --------------------------------------------------------
+
+    if "custom_state" in company_data:
+
+        custom_state = company_data["custom_state"]
+
+        missing_state_vars = [
+            variable
+            for variable in STATE_VARS
+            if variable not in custom_state
+        ]
+
+        if missing_state_vars:
+            return None, {
+                "tool": "simulate_strategy",
+                "status": "missing_custom_state_variables",
+                "missing_fields": missing_state_vars,
+                "message": (
+                    "The supplied custom Chapter 6 state "
+                    "is incomplete."
+                ),
+            }
+
+        row_data = {
+            variable: float(custom_state[variable])
+            for variable in STATE_VARS
+        }
+
+        row_data.update({
+            "cik": str(
+                company_data.get(
+                    "cik",
+                    "CUSTOM",
+                )
+            ),
+            "company_name": company_data.get(
+                "company_name",
+                "Custom Company",
+            ),
+            "period": company_data.get(
+                "period",
+                "2021-03-31",
+            ),
+            "economic_regime": company_data.get(
+                "economic_regime",
+                "custom",
+            ),
+            "economic_regime_code": float(
+                custom_state[
+                    "economic_regime_code"
+                ]
+            ),
+        })
+
+        return pd.Series(row_data), None
+
+    # --------------------------------------------------------
+    # Existing packaged historical-company path
+    # --------------------------------------------------------
 
     missing_fields = [
         field
