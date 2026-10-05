@@ -972,6 +972,11 @@ if submitted:
                     "Chapter 6 scenario simulation could not be generated."
                 )
 
+                st.error(
+                    f"Status: {simulation_result.get('status', 'unknown')} | "
+                    f"Message: {simulation_result.get('message', 'No message returned')}"
+                )
+
             st.divider()
 
             st.subheader("Derived Financial Profile")
