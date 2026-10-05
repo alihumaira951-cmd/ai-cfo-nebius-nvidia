@@ -286,68 +286,68 @@ with st.form("company_input_form"):
     with col1:
         revenue = st.number_input(
             "Revenue ($)",
-            value=st.session_state.get("revenue", 0),
+            value=float(st.session_state.get("revenue", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         cogs = st.number_input(
             "Cost of goods sold ($)",
-            value=st.session_state.get("cogs", 0),
+            value=float(st.session_state.get("cogs", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         gross_profit = st.number_input(
             "Gross profit ($)",
-            value=st.session_state.get("gross_profit", 0),
+            value=float(st.session_state.get("gross_profit", 0.0)),
             format="%.2f"
         )
 
     with col2:
         operating_expenses = st.number_input(
             "Operating expenses ($)",
-            value=st.session_state.get("operating_expenses", 0),
+            value=float(st.session_state.get("operating_expenses", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         operating_income = st.number_input(
             "Operating income ($)",
-            value=st.session_state.get("operating_income", 0),
+            value=float(st.session_state.get("operating_income", 0.0)),
             format="%.2f"
         )
 
         net_income = st.number_input(
             "Net income ($)",
-            value=st.session_state.get("net_income", 0),
+            value=float(st.session_state.get("net_income", 0.0)),
             format="%.2f"
         )
 
     with col3:
         operating_cash_flow = st.number_input(
             "Operating cash flow ($)",
-            value=st.session_state.get("operating_cash_flow", 0),
+            value=float(st.session_state.get("operating_cash_flow", 0.0)),
             format="%.2f"
         )
 
         capex = st.number_input(
             "Capital expenditures ($)",
-            value=st.session_state.get("capex", 0),
+            value=float(st.session_state.get("capex", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         rd_expense = st.number_input(
             "R&D expense ($)",
-            value=st.session_state.get("rd_expense", 0),
+            value=float(st.session_state.get("rd_expense", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         sga_expense = st.number_input(
             "SG&A expense ($)",
-            value=st.session_state.get("sga_expense", 0),
+            value=float(st.session_state.get("sga_expense", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
@@ -361,21 +361,21 @@ with st.form("company_input_form"):
     with col1:
         cash = st.number_input(
             "Cash ($)",
-            value=st.session_state.get("cash", 0),
+            value=float(st.session_state.get("cash", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         accounts_receivable = st.number_input(
             "Accounts receivable ($)",
-            value=st.session_state.get("accounts_receivable", 0),
+            value=float(st.session_state.get("accounts_receivable", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         inventory = st.number_input(
             "Inventory ($)",
-            value=st.session_state.get("inventory", 0),
+            value=float(st.session_state.get("inventory", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
@@ -383,49 +383,49 @@ with st.form("company_input_form"):
     with col2:
         current_assets = st.number_input(
             "Current assets ($)",
-            value=st.session_state.get("current_assets", 0),
+            value=float(st.session_state.get("current_assets", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         total_assets = st.number_input(
             "Total assets ($)",
-            value=st.session_state.get("total_assets", 0),
+            value=float(st.session_state.get("total_assets", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         equity = st.number_input(
             "Shareholders' equity ($)",
-            value=st.session_state.get("equity", 0),
+            value=float(st.session_state.get("equity", 0.0)),
             format="%.2f"
         )
 
     with col3:
         accounts_payable = st.number_input(
             "Accounts payable ($)",
-            value=st.session_state.get("accounts_payable", 0),
+            value=float(st.session_state.get("accounts_payable", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         current_liabilities = st.number_input(
             "Current liabilities ($)",
-            value=st.session_state.get("current_liabilities", 0),
+            value=float(st.session_state.get("current_liabilities", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         total_liabilities = st.number_input(
             "Total liabilities ($)",
-            value=st.session_state.get("total_liabilities", 0),
+            value=float(st.session_state.get("total_liabilities", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
 
         total_debt = st.number_input(
             "Total debt ($)",
-            value=st.session_state.get("total_debt", 0),
+            value=float(st.session_state.get("total_debt", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
@@ -439,7 +439,7 @@ with st.form("company_input_form"):
     with col1:
         shares_outstanding = st.number_input(
             "Shares outstanding",
-            value=st.session_state.get("shares_outstanding", 0),
+            value=float(st.session_state.get("shares_outstanding", 0.0)),
             min_value=0.0,
             format="%.0f"
         )
@@ -467,7 +467,7 @@ with st.form("company_input_form"):
     with col1:
         previous_revenue = st.number_input(
             "Previous-quarter revenue ($)",
-            value=st.session_state.get("previous_revenue", 0),
+            value=float(st.session_state.get("previous_revenue", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
@@ -475,7 +475,7 @@ with st.form("company_input_form"):
     with col2:
         previous_total_assets = st.number_input(
             "Previous-quarter total assets ($)",
-            value=st.session_state.get("previous_total_assets", 0),
+            value=float(st.session_state.get("previous_total_assets", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
@@ -483,7 +483,7 @@ with st.form("company_input_form"):
     with col3:
         previous_cash = st.number_input(
             "Previous-quarter cash ($)",
-            value=st.session_state.get("previous_cash", 0),
+            value=float(st.session_state.get("previous_cash", 0.0)),
             min_value=0.0,
             format="%.2f"
         )
