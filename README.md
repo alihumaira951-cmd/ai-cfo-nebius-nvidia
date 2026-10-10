@@ -237,14 +237,68 @@ The reasoning layer receives structured evidence produced by the underlying fina
 
 ### Current public demo status
 
-The public Streamlit deployment currently operates in **local fallback mode** because live Nebius credentials have not yet been configured.
+The public Streamlit deployment now uses **live NVIDIA Nemotron inference through Nebius Token Factory**.
 
-The application explicitly displays this status and does **not** claim that live Nemotron inference is occurring when credentials are unavailable.
+The executive reasoning layer runs `nvidia/nemotron-3-super-120b-a12b` through the Nebius Token Factory OpenAI-compatible inference API. The application displays the active provider directly in the executive decision section so users can verify that the live reasoning layer is operating through **Nebius Token Factory**.
 
 The Nemotron/Nebius service integration is contained in:
 
 ```text
 services/nebius.py
+```
+
+---
+
+## Setup and Run Locally
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/alihumaira951-cmd/ai-cfo-nebius-nvidia.git
+cd ai-cfo-nebius-nvidia
+```
+
+### 2. Create or activate a Python environment
+
+The project was tested with Python 3.10.
+
+```bash
+conda create -n ai-cfo python=3.10 -y
+conda activate ai-cfo
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Configure live Nemotron inference
+
+For the preferred hackathon configuration:
+
+```bash
+export NEBIUS_API_KEY="YOUR_NEBIUS_API_KEY"
+```
+
+Optional direct NVIDIA fallback:
+
+```bash
+export NVIDIA_API_KEY="YOUR_NVIDIA_API_KEY"
+```
+
+Do not hard-code API keys in source files or commit them to GitHub.
+
+### 5. Run the application
+
+```bash
+streamlit run app.py
+```
+
+The local application will typically open at:
+
+```text
+http://localhost:8501
 ```
 
 ---
@@ -283,5 +337,5 @@ AI CFO is a research-based decision-support prototype.
 - The Technical Communications walk-forward result is an **illustrative company-level case study**, not overall model accuracy.
 - The Axogen SEC comparison is a **historical example**, not general forecast-performance evidence.
 - Custom company analysis currently supports **2021–2022 reporting quarters** because those macroeconomic and market states are packaged with the deployed model.
-- The public deployment currently uses a **local executive-reasoning fallback** rather than live Nemotron inference.
+- The public deployment uses **live NVIDIA Nemotron through Nebius Token Factory** for executive reasoning, with a direct NVIDIA API path retained as a secondary fallback.
 
