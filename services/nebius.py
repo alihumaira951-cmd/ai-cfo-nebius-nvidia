@@ -133,7 +133,7 @@ def generate_nebius_response(
                 model=NEBIUS_MODEL,
                 messages=messages,
                 temperature=0.2,
-                max_tokens=1200,
+                max_tokens=1800,
             )
 
             return {
@@ -161,7 +161,7 @@ def generate_nebius_response(
                 model=NVIDIA_MODEL,
                 messages=messages,
                 temperature=0.2,
-                max_tokens=1200,
+                max_tokens=1800,
             )
 
             return {
