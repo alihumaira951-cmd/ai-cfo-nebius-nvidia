@@ -1,11 +1,22 @@
 # AI CFO
 
+# AI CFO
+
 ### Explainable Agentic Decision Intelligence for Financial Management
 
 **Predict → Recommend → Explain → Simulate → Decide**
 
+AI CFO is a multi-stage financial decision-intelligence system that combines predictive modeling, governance-aware recommendations, SHAP explainability, reinforcement-learning simulation, and **live NVIDIA Nemotron executive reasoning through Nebius Token Factory**.
+
+### Hackathon Architecture
+
+**Financial Data → XGBoost Distress Prediction → Strategic Recommendation → SHAP Explanation → PPO Scenario Simulation → NVIDIA Nemotron on Nebius Token Factory → Executive Decision Brief**
+
 🌐 **Live Demo:**  
-(https://ai-cfo-nebius-nvidia-bgkhxcxxkfcu2qucsmwbgw.streamlit.app/)
+https://ai-cfo-nebius-nvidia-bgkhxcxxkfcu2qucsmwbgw.streamlit.app/
+
+🧠 **Executive Reasoning:** NVIDIA Nemotron-3-Super-120B-A12B  
+☁️ **Inference Platform:** Nebius Token Factory
 
 ---
 
