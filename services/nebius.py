@@ -7,12 +7,12 @@ from openai import OpenAI
 # Nebius Token Factory configuration
 # ---------------------------------------------------------
 
-NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
+NEBIUS_BASE_URL = "https://api.tokenfactory.us-central1.nebius.com/v1/"
 
 # Can be overridden later without changing application code.
 NEBIUS_MODEL = os.environ.get(
     "NEBIUS_MODEL",
-    "nvidia/Nemotron-3_5-Lightning",
+    "nvidia/nemotron-3-super-120b-a12b",
 )
 
 
